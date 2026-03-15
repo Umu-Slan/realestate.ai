@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# Python
+.venv
+venv
+env
+__pycache__
+*.pyc
+.pytest_cache
+.coverage
+htmlcov
+
+# IDE
+.idea
+.vscode
+.cursor
+
+# Local
+.env
+.env.local
+*.log
+media/
+staticfiles/
+
+# Docs (keep in image for reference, or exclude to shrink)
+# docs/

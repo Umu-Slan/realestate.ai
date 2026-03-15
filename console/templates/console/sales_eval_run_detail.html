@@ -1,0 +1,50 @@
+{% extends "console/base.html" %}
+{% block title %}Sales Eval Run {{ run.run_id }}{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">Sales Eval Run: {{ run.run_id }}</h1>
+<p class="text-gray-600 mb-4">{{ run.passed }}/{{ run.total_scenarios }} passed — {{ run.created_at|date:"Y-m-d H:i" }}</p>
+
+<div class="mb-4 p-4 bg-slate-50 rounded">
+  <h2 class="font-semibold mb-2">Aggregate Metrics</h2>
+  <dl class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+    {% for k, v in run.metrics.items %}
+    <dt class="text-gray-500">{{ k }}</dt><dd>{{ v }}</dd>
+    {% endfor %}
+  </dl>
+</div>
+
+<div class="bg-white rounded shadow overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-100">
+      <tr>
+        <th class="text-left p-2">Scenario</th>
+        <th class="text-left p-2">Category</th>
+        <th class="text-center p-2">Pass</th>
+        <th class="text-left p-2">Scores</th>
+        <th class="text-left p-2">Failures</th>
+        <th class="text-right p-2">ms</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in results %}
+      <tr class="border-b border-slate-100 hover:bg-slate-50">
+        <td class="p-2 font-medium">{{ r.scenario.name }}</td>
+        <td class="p-2 text-gray-600">{{ r.scenario.category }}</td>
+        <td class="p-2 text-center">
+          {% if r.passed %}<span class="text-green-600">✓</span>{% else %}<span class="text-red-600">✗</span>{% endif %}
+        </td>
+        <td class="p-2 font-mono text-xs">
+          {% for k, v in r.scores.items %}{{ k }}={{ v }}{% if not forloop.last %} {% endif %}{% endfor %}
+        </td>
+        <td class="p-2 text-red-600 text-xs">
+          {% for f in r.failures %}{{ f }}{% if not forloop.last %}; {% endif %}{% empty %}-{% endfor %}
+        </td>
+        <td class="p-2 text-right">{{ r.run_time_ms|default:"-" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<p class="mt-4"><a href="{% url 'console:sales_eval' %}" class="text-teal-600 hover:underline">← Back to Sales Eval</a></p>
+{% endblock %}

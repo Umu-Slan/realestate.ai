@@ -1,0 +1,25 @@
+[
+  {"category": "intent", "name": "SE-INT-001", "description": "Project inquiry in Egyptian Arabic", "messages": [{"role": "user", "content": "عايز شقة في الشيخ زايد"}], "expected_intent": "project_inquiry", "expected_route": "sales", "is_arabic_primary": true},
+  {"category": "intent", "name": "SE-INT-002", "description": "Price inquiry", "messages": [{"role": "user", "content": "كم أسعار الشقق ١٢٠ متر؟"}], "expected_intent": "price_inquiry", "is_arabic_primary": true},
+  {"category": "intent", "name": "SE-INT-003", "description": "Brochure request", "messages": [{"role": "user", "content": "ممكن بروشور للمشروع؟"}], "expected_intent": "brochure_request", "is_arabic_primary": true},
+  {"category": "intent", "name": "SE-INT-004", "description": "Schedule visit", "messages": [{"role": "user", "content": "عايز أحجز زيارة للمعرض"}], "expected_intent": "schedule_visit", "is_arabic_primary": true},
+  {"category": "intent", "name": "SE-INT-005", "description": "Investment inquiry", "messages": [{"role": "user", "content": "أبحث عن استثمار عقاري في القاهرة الجديدة"}], "expected_intent": "investment_inquiry", "is_arabic_primary": true},
+
+  {"category": "qualification", "name": "SE-QUAL-001", "description": "Budget and location stated", "messages": [{"role": "user", "content": "معايا ٣ مليون، عايز شقة في المعادي"}], "expected_qualification": {"budget_max": 3000000, "location_preference": "المعادي"}, "expected_intent": "project_inquiry", "is_arabic_primary": true},
+  {"category": "qualification", "name": "SE-QUAL-002", "description": "Budget only", "messages": [{"role": "user", "content": "ميزانيتي حوالي ٤ مليون"}], "expected_qualification": {"budget_max": 4000000}, "expected_intent": "project_inquiry", "is_arabic_primary": true},
+  {"category": "qualification", "name": "SE-QUAL-003", "description": "Location only", "messages": [{"role": "user", "content": "ابغى عقار في التجمع"}], "expected_qualification": {"location_preference": "التجمع"}, "expected_intent": "project_inquiry", "is_arabic_primary": true},
+
+  {"category": "objection", "name": "SE-OBJ-001", "description": "Price objection", "messages": [{"role": "user", "content": "غالي جداً، ميزانيتي أقل من كده"}], "expected_objection_key": "price_too_high", "expected_response_contains": ["فهمت", "تقسيط"], "is_arabic_primary": true},
+  {"category": "objection", "name": "SE-OBJ-002", "description": "Location concern", "messages": [{"role": "user", "content": "الموقع بعيد عن شغلي"}], "expected_objection_key": "location_concern", "is_arabic_primary": true},
+  {"category": "objection", "name": "SE-OBJ-003", "description": "Waiting hesitation", "messages": [{"role": "user", "content": "هستنى وأفكر، مش مستعجل دلوقتي"}], "expected_objection_key": "waiting_hesitation", "expected_response_contains": ["وقتك", "بروشور"], "is_arabic_primary": true},
+  {"category": "objection", "name": "SE-OBJ-004", "description": "Comparing projects", "messages": [{"role": "user", "content": "بين مشروعين دي أيهما أفضل؟"}], "expected_objection_key": "comparing_projects", "is_arabic_primary": true},
+
+  {"category": "follow_up", "name": "SE-FUP-001", "description": "Vague budget - expect follow-up", "messages": [{"role": "user", "content": "عايز شقة"}], "expected_next_action": "ask_budget", "expected_response_contains": ["ميزانية", "منطقة"], "is_arabic_primary": true},
+  {"category": "follow_up", "name": "SE-FUP-002", "description": "Budget only - expect location ask", "messages": [{"role": "user", "content": "معايا ٣ مليون"}], "expected_next_action": "ask_location", "expected_response_contains": ["منطقة", "تفضل"], "is_arabic_primary": true},
+
+  {"category": "arabic", "name": "SE-AR-001", "description": "Natural Arabic response", "messages": [{"role": "user", "content": "أهلاً، عايز أعرف عن المشاريع"}], "expected_response_contains": ["أهلاً", "مشروع"], "expected_response_excludes": ["كيف أستطيع مساعدتك"], "is_arabic_primary": true},
+  {"category": "arabic", "name": "SE-AR-002", "description": "Gulf-friendly", "messages": [{"role": "user", "content": "ابغى شقة بالتجمع"}], "expected_response_contains": ["شقة", "التجمع"], "is_arabic_primary": true},
+
+  {"category": "mixed", "name": "SE-MIX-001", "description": "Full qualification flow", "messages": [{"role": "user", "content": "عايز شقة ٣ غرف في المعادي، الميزانية حوالى ٣ مليون"}], "expected_intent": "project_inquiry", "expected_qualification": {"budget_max": 3000000, "location_preference": "المعادي"}, "expected_next_action": "recommend_projects", "is_arabic_primary": true},
+  {"category": "mixed", "name": "SE-MIX-002", "description": "Hot lead with visit intent", "messages": [{"role": "user", "content": "ميزانيتي ٤ مليون، عايز شقة ١٥٠ متر في القاهرة الجديدة، ممكن أعمل زيارة اليوم؟"}], "expected_intent": "schedule_visit", "expected_qualification": {"budget_max": 4000000, "location_preference": "القاهرة الجديدة"}, "expected_stage": "visit_planning", "expected_next_action": "propose_visit", "is_arabic_primary": true}
+]

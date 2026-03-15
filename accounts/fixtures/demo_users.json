@@ -1,0 +1,6 @@
+[
+  {"model": "auth.user", "pk": null, "fields": {"username": "admin", "email": "admin@demo.local", "is_staff": true, "is_superuser": true, "is_active": true}},
+  {"model": "auth.user", "pk": null, "fields": {"username": "operator", "email": "operator@demo.local", "is_staff": true, "is_superuser": false, "is_active": true}},
+  {"model": "auth.user", "pk": null, "fields": {"username": "reviewer", "email": "reviewer@demo.local", "is_staff": true, "is_superuser": false, "is_active": true}},
+  {"model": "auth.user", "pk": null, "fields": {"username": "demo", "email": "demo@demo.local", "is_staff": true, "is_superuser": false, "is_active": true}}
+]

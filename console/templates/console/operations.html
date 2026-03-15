@@ -1,0 +1,241 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Operations" %}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-800 mb-6">{% trans "Operations" %}</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">{% trans "Health Checks" %}</h2>
+    <p class="text-slate-600 text-sm mb-3">{% blocktrans with ok=ok_count %}{{ ok }}/4 ok{% endblocktrans %}</p>
+    <div class="space-y-2">
+      {% for key, check in checks.items %}
+      <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+        <span class="font-medium text-slate-700">{{ key|upper }}</span>
+        {% if check.status == "ok" %}
+        <span class="px-2 py-0.5 rounded text-xs bg-emerald-100 text-emerald-800">OK</span>
+        {% else %}
+        <span class="px-2 py-0.5 rounded text-xs bg-red-100 text-red-800" title="{{ check.error|default:'' }}">FAIL</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <p class="text-slate-500 text-xs mt-4">
+      <a href="/health/" target="_blank" class="text-teal-600 hover:underline">/health/</a> ·
+      <a href="/health/ready/" target="_blank" class="text-teal-600 hover:underline">/health/ready/</a> (readiness)
+    </p>
+  </div>
+
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">{% trans "Operational State" %}</h2>
+    <div class="grid grid-cols-2 gap-3">
+      <a href="{% url 'console:conversations' %}" class="block p-3 rounded-lg bg-slate-50 hover:bg-slate-100">
+        <span class="text-2xl font-bold text-slate-800">{{ stats.conversations }}</span>
+        <span class="block text-slate-600 text-sm">{% trans "Conversations" %}</span>
+      </a>
+      <a href="{% url 'console:customers' %}" class="block p-3 rounded-lg bg-slate-50 hover:bg-slate-100">
+        <span class="text-2xl font-bold text-slate-800">{{ stats.customers }}</span>
+        <span class="block text-slate-600 text-sm">{% trans "Customers" %}</span>
+      </a>
+      <a href="{% url 'console:support_cases' %}" class="block p-3 rounded-lg bg-slate-50 hover:bg-slate-100">
+        <span class="text-2xl font-bold text-slate-800">{{ stats.support_cases }}</span>
+        <span class="block text-slate-600 text-sm">{% trans "Support Cases" %}</span>
+      </a>
+      <a href="{% url 'console:escalations' %}" class="block p-3 rounded-lg bg-slate-50 hover:bg-slate-100">
+        <span class="text-2xl font-bold {% if stats.escalations_open %}text-red-600{% else %}text-slate-800{% endif %}">{{ stats.escalations_open }}</span>
+        <span class="block text-slate-600 text-sm">{% trans "Open Escalations" %}</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<form method="get" class="mt-6 flex flex-wrap items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+  <span class="text-sm font-medium text-slate-600">{% trans "Filters" %}:</span>
+  <input type="text" name="conversation_id" value="{{ filters.conversation_id }}" placeholder="{% trans 'Conversation ID' %}" class="px-3 py-1.5 border border-slate-200 rounded text-sm w-32" />
+  <input type="text" name="run_id" value="{{ filters.run_id }}" placeholder="{% trans 'Run ID' %}" class="px-3 py-1.5 border border-slate-200 rounded text-sm w-40 font-mono text-xs" />
+  <select name="status" class="px-3 py-1.5 border border-slate-200 rounded text-sm bg-white">
+    <option value="all" {% if filters.status == "all" %}selected{% endif %}>{% trans "All runs" %}</option>
+    <option value="success" {% if filters.status == "success" %}selected{% endif %}>{% trans "Success only" %}</option>
+    <option value="escalated" {% if filters.status == "escalated" %}selected{% endif %}>{% trans "Escalated only" %}</option>
+    <option value="failed" {% if filters.status == "failed" %}selected{% endif %}>{% trans "Failed only" %}</option>
+  </select>
+  <button type="submit" class="px-3 py-1.5 bg-teal-600 text-white rounded text-sm hover:bg-teal-500">{% trans "Apply" %}</button>
+  {% if filters.conversation_id or filters.run_id or filters.status != "all" %}
+  <a href="{% url 'console:operations' %}" class="text-sm text-slate-500 hover:underline">{% trans "Clear" %}</a>
+  {% endif %}
+</form>
+
+<div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+      {% trans "Recent Successful Runs" %}
+    </h2>
+    {% if recent_successful %}
+    <div class="overflow-x-auto max-h-64 overflow-y-auto">
+      <table class="w-full text-sm">
+        <thead class="sticky top-0 bg-white">
+          <tr class="border-b border-slate-200 text-left text-slate-600">
+            <th class="py-2 pr-2">Run ID</th>
+            <th class="py-2 pr-2">Conv</th>
+            <th class="py-2 pr-2">Intent</th>
+            <th class="py-2 pr-2">Score</th>
+            <th class="py-2 pr-2">When</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for run in recent_successful %}
+          <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="py-1.5 pr-2"><a href="{% url 'console:conversation_detail' run.conversation_id %}" class="font-mono text-xs text-teal-600 hover:underline">{{ run.run_id|truncatechars:14 }}</a></td>
+            <td class="py-1.5 pr-2"><a href="{% url 'console:conversation_detail' run.conversation_id %}" class="text-teal-600 hover:underline">{{ run.conversation_id }}</a></td>
+            <td class="py-1.5 pr-2">{{ run.intent.primary|default:"-"|truncatechars:12 }}</td>
+            <td class="py-1.5 pr-2">{{ run.scoring.score|default:"-" }}{% if run.scoring.temperature %} <span class="text-slate-400">({{ run.scoring.temperature }})</span>{% endif %}</td>
+            <td class="py-1.5 pr-2 text-slate-500">{{ run.created_at|timesince }} ago</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-slate-500 text-sm">{% trans "No successful runs in this period." %}</p>
+    {% endif %}
+  </div>
+
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-red-500"></span>
+      {% trans "Recent Failed Runs" %}
+    </h2>
+    {% if recent_failed %}
+    <div class="overflow-x-auto max-h-64 overflow-y-auto">
+      <table class="w-full text-sm">
+        <thead class="sticky top-0 bg-white">
+          <tr class="border-b border-slate-200 text-left text-slate-600">
+            <th class="py-2 pr-2">Run ID</th>
+            <th class="py-2 pr-2">Reason</th>
+            <th class="py-2 pr-2">When</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in recent_failed %}
+          <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="py-1.5 pr-2 font-mono text-xs">{{ log.subject_id|truncatechars:16 }}</td>
+            <td class="py-1.5 pr-2" title="{{ log.payload.reason|default:'' }}">{{ log.payload.reason|default:"-"|truncatechars:30 }}</td>
+            <td class="py-1.5 pr-2 text-slate-500">{{ log.created_at|timesince }} ago</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-slate-500 text-sm">{% trans "No failed runs in this period." %}</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+      {% trans "Recent Escalations" %}
+    </h2>
+    {% if recent_escalations %}
+    <div class="overflow-x-auto max-h-64 overflow-y-auto">
+      <table class="w-full text-sm">
+        <thead class="sticky top-0 bg-white">
+          <tr class="border-b border-slate-200 text-left text-slate-600">
+            <th class="py-2 pr-2">ID</th>
+            <th class="py-2 pr-2">Reason</th>
+            <th class="py-2 pr-2">Conv</th>
+            <th class="py-2 pr-2">When</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for esc in recent_escalations %}
+          <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="py-1.5 pr-2"><a href="{% url 'console:escalation_detail' esc.id %}" class="text-teal-600 hover:underline font-medium">#{{ esc.id }}</a></td>
+            <td class="py-1.5 pr-2">{{ esc.reason }}</td>
+            <td class="py-1.5 pr-2">{% if esc.conversation_id %}<a href="{% url 'console:conversation_detail' esc.conversation_id %}" class="text-teal-600 hover:underline">{{ esc.conversation_id }}</a>{% else %}-{% endif %}</td>
+            <td class="py-1.5 pr-2 text-slate-500">{{ esc.created_at|timesince }} ago</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-slate-500 text-sm">{% trans "No escalations in this period." %}</p>
+    {% endif %}
+    <p class="mt-2"><a href="{% url 'console:escalations' %}" class="text-sm text-teal-600 hover:underline">{% trans "View all escalations" %} →</a></p>
+  </div>
+
+  <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+      {% trans "Recent Support Cases" %}
+    </h2>
+    {% if recent_support_cases %}
+    <div class="overflow-x-auto max-h-64 overflow-y-auto">
+      <table class="w-full text-sm">
+        <thead class="sticky top-0 bg-white">
+          <tr class="border-b border-slate-200 text-left text-slate-600">
+            <th class="py-2 pr-2">ID</th>
+            <th class="py-2 pr-2">Category</th>
+            <th class="py-2 pr-2">Severity</th>
+            <th class="py-2 pr-2">Conv</th>
+            <th class="py-2 pr-2">When</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sc in recent_support_cases %}
+          <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="py-1.5 pr-2"><a href="{% url 'console:support_case_detail' sc.id %}" class="text-teal-600 hover:underline font-medium">#{{ sc.id }}</a></td>
+            <td class="py-1.5 pr-2">{{ sc.category }}</td>
+            <td class="py-1.5 pr-2">{% if sc.severity %}<span class="badge-{{ sc.severity }} px-1 rounded text-xs">{{ sc.severity }}</span>{% else %}-{% endif %}</td>
+            <td class="py-1.5 pr-2">{% if sc.conversation_id %}<a href="{% url 'console:conversation_detail' sc.conversation_id %}" class="text-teal-600 hover:underline">{{ sc.conversation_id }}</a>{% else %}-{% endif %}</td>
+            <td class="py-1.5 pr-2 text-slate-500">{{ sc.created_at|timesince }} ago</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-slate-500 text-sm">{% trans "No support cases in this period." %}</p>
+    {% endif %}
+    <p class="mt-2"><a href="{% url 'console:support_cases' %}" class="text-sm text-teal-600 hover:underline">{% trans "View all support cases" %} →</a></p>
+  </div>
+</div>
+
+<div class="mt-6 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+  <h2 class="text-lg font-semibold text-slate-800 mb-4">{% trans "All Pipeline Runs" %}</h2>
+  {% if recent_runs %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-slate-200 text-left text-slate-600">
+          <th class="py-2 pr-4">Run ID</th>
+          <th class="py-2 pr-4">Channel</th>
+          <th class="py-2 pr-4">Intent</th>
+          <th class="py-2 pr-4">Score</th>
+          <th class="py-2 pr-4">Escalation</th>
+          <th class="py-2 pr-4">Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in recent_runs %}
+        <tr class="border-b border-slate-100 hover:bg-slate-50">
+          <td class="py-2 pr-4 font-mono text-xs"><a href="{% url 'console:conversation_detail' run.conversation_id %}" class="text-teal-600 hover:underline">{{ run.run_id|truncatechars:16 }}</a></td>
+          <td class="py-2 pr-4">{{ run.source_channel|default:"-" }}</td>
+          <td class="py-2 pr-4">{{ run.intent.primary|default:"-"|truncatechars:20 }}</td>
+          <td class="py-2 pr-4">{{ run.scoring.score|default:"-" }}{% if run.scoring.temperature %} ({{ run.scoring.temperature }}){% endif %}</td>
+          <td class="py-2 pr-4">{% if run.escalation_flag %}<span class="badge-open px-1.5 py-0.5 rounded text-xs">yes</span>{% else %}-{% endif %}</td>
+          <td class="py-2 pr-4 text-slate-500">{{ run.created_at|timesince }} ago</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-slate-500 text-sm">{% trans "No orchestration runs in this period." %}</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,244 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Dashboard" %}{% endblock %}
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-800">{% trans "Dashboard" %}</h1>
+    <p class="text-slate-500 text-sm mt-1">{% trans "Operations overview for the selected period." %}</p>
+  </div>
+  <form method="get" class="flex items-center gap-2">
+    <label class="text-slate-600 text-sm font-medium">{% trans "Period" %}:</label>
+    <select name="days" onchange="this.form.submit()" class="px-3 py-2 border border-slate-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+      <option value="7"  {% if metrics.days == 7 %}selected{% endif %}>{% trans "7 days" %}</option>
+      <option value="30" {% if metrics.days == 30 %}selected{% endif %}>{% trans "30 days" %}</option>
+      <option value="90" {% if metrics.days == 90 %}selected{% endif %}>{% trans "90 days" %}</option>
+    </select>
+  </form>
+</div>
+
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+  <a href="{% url 'console:customers' %}" class="group bg-white rounded-xl border border-slate-200 p-6 hover:border-teal-200 hover:shadow-lg transition-all duration-200 card-hover">
+    <div class="flex items-center justify-between">
+      <div class="min-w-0">
+        <p class="text-sm font-medium text-slate-500 truncate">{% trans "New leads" %}</p>
+        <p class="text-2xl font-bold text-slate-800 mt-1">{{ metrics.lead_volume }}</p>
+      </div>
+      <div class="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600 group-hover:bg-teal-100 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      </div>
+    </div>
+  </a>
+  <a href="{% url 'console:conversations' %}" class="group bg-white rounded-xl border border-slate-200 p-6 hover:border-teal-200 hover:shadow-md transition duration-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-slate-500">{% trans "Active conversations" %}</p>
+        <p class="text-2xl font-bold text-slate-800 mt-1">{{ metrics.conversations }}</p>
+      </div>
+      <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-100 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+      </div>
+    </div>
+  </a>
+  <a href="{% url 'console:support_cases' %}" class="group bg-white rounded-xl border border-slate-200 p-6 hover:border-teal-200 hover:shadow-md transition duration-200">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-slate-500">{% trans "Support cases" %}</p>
+        <p class="text-2xl font-bold text-slate-800 mt-1">{{ metrics.support_cases }}</p>
+      </div>
+      <div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 group-hover:bg-amber-100 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      </div>
+    </div>
+  </a>
+  <a href="{% url 'console:escalations' %}" class="group bg-white rounded-xl border border-slate-200 p-6 hover:border-teal-200 hover:shadow-md transition duration-200 {% if metrics.escalations_open %}border-red-200 bg-red-50/30{% endif %}">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-slate-500">{% trans "Escalations" %}</p>
+        <p class="text-2xl font-bold mt-1 {% if metrics.escalations_open %}text-red-600{% else %}text-slate-800{% endif %}">{{ metrics.escalations_open }}</p>
+      </div>
+      <div class="w-10 h-10 rounded-lg {% if metrics.escalations_open %}bg-red-100 text-red-600{% else %}bg-slate-100 text-slate-600{% endif %} flex items-center justify-center">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+    </div>
+  </a>
+</div>
+
+<!-- Sales conversion quality -->
+<div class="mb-8">
+  <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+    <span class="w-1 h-6 rounded bg-teal-500"></span>
+    {% trans "Sales conversion quality" %}
+  </h2>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">{% trans "Hot lead rate" %}</p>
+          <p class="text-2xl font-bold text-red-600 mt-1">{{ metrics.hot_lead_rate_pct }}%</p>
+          <p class="text-xs text-slate-400 mt-0.5">{{ metrics.hot_count }} / {{ metrics.total_leads_scored }} {% trans "scored" %}</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">{% trans "Recommendation rate" %}</p>
+          <p class="text-2xl font-bold text-teal-600 mt-1">{{ metrics.recommendation_rate_pct }}%</p>
+          <p class="text-xs text-slate-400 mt-0.5">{{ metrics.recommendation_count }} {% trans "recs" %} / {{ metrics.response_count }} {% trans "AI responses" %}</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-teal-50 flex items-center justify-center">
+          <svg class="w-6 h-6 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">{% trans "Objections detected" %}</p>
+          <p class="text-2xl font-bold text-amber-600 mt-1">{{ metrics.objection_count }}</p>
+          <p class="text-xs text-slate-400 mt-0.5">{% trans "Top concerns in sampled messages" %}</p>
+        </div>
+        <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
+          <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% if metrics.top_objections %}
+  <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+    <h3 class="text-sm font-semibold text-slate-600 mb-3">{% trans "Top objections" %}</h3>
+    <div class="flex flex-wrap gap-2">
+      {% for o in metrics.top_objections %}
+      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 text-sm font-medium border border-amber-200">
+        <span class="opacity-90">{{ o.label }}</span>
+        <span class="text-amber-600">{{ o.count }}</span>
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Secondary metrics -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+  <a href="{% url 'console:customers' %}?temp=hot" class="bg-white rounded-xl border border-slate-200 p-4 hover:border-red-200 hover:shadow-sm transition">
+    <p class="text-sm text-slate-500">{% trans "Hot leads" %}</p>
+    <p class="text-xl font-semibold text-red-600">{{ metrics.hot_count }}</p>
+  </a>
+  <a href="{% url 'console:customers' %}?temp=warm" class="bg-white rounded-xl border border-slate-200 p-4 hover:border-amber-200 hover:shadow-sm transition">
+    <p class="text-sm text-slate-500">{% trans "Warm leads" %}</p>
+    <p class="text-xl font-semibold text-amber-600">{{ metrics.warm_count }}</p>
+  </a>
+  <a href="{% url 'console:customers' %}?temp=cold" class="bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-300 hover:shadow-sm transition">
+    <p class="text-sm text-slate-500">{% trans "Cold leads" %}</p>
+    <p class="text-xl font-semibold text-slate-600">{{ metrics.cold_count }}</p>
+  </a>
+  <a href="{% url 'console:recommendations' %}" class="bg-white rounded-xl border border-slate-200 p-4 hover:border-teal-200 hover:shadow-sm transition">
+    <p class="text-sm text-slate-500">{% trans "Recommendations" %}</p>
+    <p class="text-xl font-semibold text-slate-800">{{ metrics.recommendation_count }}</p>
+  </a>
+  <div class="bg-white rounded-xl border border-slate-200 p-4">
+    <p class="text-sm text-slate-500">{% trans "AI Responses" %}</p>
+    <p class="text-xl font-semibold text-slate-800">{{ metrics.response_count }}</p>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-4">
+    <p class="text-sm text-slate-500">{% trans "Conversations" %}</p>
+    <p class="text-xl font-semibold text-slate-800">{{ metrics.conversations }}</p>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+  <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+    <h3 class="text-base font-semibold text-slate-800 mb-4">{% trans "Conversation sources" %}</h3>
+    {% if metrics.channel_distribution %}
+    <div class="h-64">
+      <canvas id="chart-sources"></canvas>
+    </div>
+    {% else %}
+    <p class="text-slate-500 text-sm py-8 text-center">{% trans "No channel data for this period." %}</p>
+    {% endif %}
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+    <h3 class="text-base font-semibold text-slate-800 mb-4">{% trans "Lead temperature" %}</h3>
+    <div class="h-64">
+      <canvas id="chart-leads"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Activity timeline -->
+<div class="mb-8">
+  {% include "console/includes/activity_timeline.html" with activity_events=activity_events %}
+</div>
+
+<!-- Quick actions -->
+<div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+  <h3 class="text-base font-semibold text-slate-800 mb-5">{% trans "Quick actions" %}</h3>
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+    <a href="/api/engines/demo/" target="_blank" class="flex flex-col items-center gap-2 p-4 bg-teal-50 hover:bg-teal-100 rounded-xl text-center transition">
+      <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+      <span class="text-sm font-medium text-teal-800">{% trans "Start test chat" %}</span>
+    </a>
+    <a href="{% url 'onboarding:upload_documents' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-slate-100 rounded-xl text-center transition">
+      <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+      <span class="text-sm font-medium text-slate-700">{% trans "Upload docs" %}</span>
+    </a>
+    <a href="{% url 'onboarding:upload_structured' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-slate-100 rounded-xl text-center transition">
+      <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <span class="text-sm font-medium text-slate-700">{% trans "Upload projects" %}</span>
+    </a>
+    <a href="{% url 'onboarding:upload_crm' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-slate-100 rounded-xl text-center transition">
+      <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      <span class="text-sm font-medium text-slate-700">{% trans "Import CRM" %}</span>
+    </a>
+    <a href="{% url 'console:escalations' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-slate-100 rounded-xl text-center transition {% if metrics.escalations_open %}bg-red-50 hover:bg-red-100{% endif %}">
+      <svg class="w-6 h-6 {% if metrics.escalations_open %}text-red-600{% else %}text-slate-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      <span class="text-sm font-medium {% if metrics.escalations_open %}text-red-700{% else %}text-slate-700{% endif %}">{% trans "Escalations" %} {% if metrics.escalations_open %}({{ metrics.escalations_open }}){% endif %}</span>
+    </a>
+    <a href="{% url 'console:support_cases' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-slate-100 rounded-xl text-center transition">
+      <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      <span class="text-sm font-medium text-slate-700">{% trans "Support queue" %}</span>
+    </a>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var src = document.getElementById('chart-sources');
+  if (src) {
+    new Chart(src, {
+      type: 'doughnut',
+      data: {
+        labels: [{% for ch in metrics.channel_distribution %}'{{ ch.channel|default:"unknown" }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+          data: [{% for ch in metrics.channel_distribution %}{{ ch.count }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+          backgroundColor: ['#14b8a6', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b'],
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+  var lead = document.getElementById('chart-leads');
+  if (lead) {
+    new Chart(lead, {
+      type: 'bar',
+      data: {
+        labels: ['{% trans "Hot" %}', '{% trans "Warm" %}', '{% trans "Cold" %}'],
+        datasets: [{
+          label: '{% trans "Leads" %}',
+          data: [{{ metrics.hot_count }}, {{ metrics.warm_count }}, {{ metrics.cold_count }}],
+          backgroundColor: ['#ef4444', '#f59e0b', '#64748b'],
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+    });
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% load i18n %}
+<div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+  <h3 class="text-base font-semibold text-slate-800 mb-5 flex items-center gap-2">
+    <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    {% trans "Activity" %}
+  </h3>
+  <div class="relative">
+    <div class="absolute start-3 top-0 bottom-0 w-px bg-slate-200" aria-hidden="true"></div>
+    <ul class="space-y-0">
+      {% for event in activity_events %}
+      <li class="relative flex gap-4 pb-6 last:pb-0">
+        <span class="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ring-4 ring-white {% if event.color == 'red' %}bg-red-500{% elif event.color == 'amber' %}bg-amber-500{% elif event.color == 'teal' %}bg-teal-500{% elif event.color == 'blue' %}bg-blue-500{% else %}bg-slate-400{% endif %}"></span>
+        <div class="flex-1 min-w-0 pt-0.5">
+          <a href="{{ event.url }}" class="block group">
+            <p class="text-sm font-medium text-slate-800 group-hover:text-teal-600 transition">{{ event.title }}</p>
+            <p class="text-xs text-slate-500 mt-0.5">{{ event.description }}</p>
+            <p class="text-xs text-slate-400 mt-1">{{ event.timestamp }}</p>
+          </a>
+        </div>
+      </li>
+      {% empty %}
+      <li class="text-sm text-slate-500 py-4">{% trans "No recent activity." %}</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>

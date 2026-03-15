@@ -1,0 +1,93 @@
+{% extends "console/base.html" %}
+{% block title %}Human Corrections{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-800 mb-6">Human Corrections</h1>
+
+{% if can_submit_correction %}
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+  <h2 class="text-lg font-semibold text-slate-800 mb-4">Submit Correction (standalone)</h2>
+  <form action="{% url 'console:submit_correction' %}" method="post" class="space-y-3 max-w-xl">
+    {% csrf_token %}
+    <div><label class="block text-sm text-slate-500">Message ID</label><input type="text" name="subject_id" placeholder="Message ID" class="w-full border border-slate-200 rounded-lg px-3 py-2" required></div>
+    <input type="hidden" name="subject_type" value="message">
+    <input type="hidden" name="field_name" value="response">
+    <div><label class="block text-sm text-slate-500">Original value</label><textarea name="original_value" rows="2" class="w-full border border-slate-200 rounded-lg px-3 py-2"></textarea></div>
+    <div><label class="block text-sm text-slate-500">Corrected value *</label><textarea name="corrected_value" rows="3" class="w-full border border-slate-200 rounded-lg px-3 py-2" required></textarea></div>
+    <div><label class="block text-sm text-slate-500">Issue type</label>
+      <select name="issue_type" class="w-full border border-slate-200 rounded-lg px-3 py-2">
+        <option value="">—</option>
+        {% for value, label in issue_type_choices %}
+        <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div><label class="block text-sm text-slate-500">Reason</label><input type="text" name="reason" class="w-full border border-slate-200 rounded-lg px-3 py-2"></div>
+    <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">Submit Correction</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-6">
+  <h2 class="text-lg font-semibold text-slate-800 p-5 border-b border-slate-200">Response Feedback (from conversations)</h2>
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Conv</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Customer</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Mode</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Issue</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">By</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Created</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200">
+      {% for f in feedback_list %}
+      <tr class="hover:bg-slate-50">
+        <td class="px-6 py-4">{% with cid=f.conversation_id|default:f.message.conversation_id %}{% if cid %}<a href="{% url 'console:conversation_detail' cid %}" class="text-teal-600 hover:underline">{{ cid }}</a>{% else %}—{% endif %}{% endwith %}</td>
+        <td class="px-6 py-4">{% if f.customer_id %}<a href="{% url 'console:customer_detail' f.customer_id %}" class="text-teal-600 hover:underline">{{ f.customer_id }}</a>{% else %}—{% endif %}</td>
+        <td class="px-6 py-4">{{ f.mode|default:"—" }}</td>
+        <td class="px-6 py-4">{% if f.is_good %}<span class="px-2 py-0.5 rounded text-xs bg-green-100 text-green-800">✓ Correct</span>{% else %}<span class="px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-800">Corrected</span>{% endif %}</td>
+        <td class="px-6 py-4">{{ f.issue_type|default:f.category|default:"—" }}</td>
+        <td class="px-6 py-4">{{ f.created_by|default:"—" }}</td>
+        <td class="px-6 py-4 text-slate-500">{{ f.created_at|date:"Y-m-d H:i" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="px-6 py-8 text-center text-slate-500 text-sm">No feedback yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+  <h2 class="text-lg font-semibold text-slate-800 p-5 border-b border-slate-200">Human Corrections (linked)</h2>
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Subject</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Conv</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Customer</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Mode</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Issue</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">By</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Created</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200">
+      {% for c in corrections %}
+      <tr class="hover:bg-slate-50">
+        <td class="px-6 py-4">{{ c.subject_type }}:{{ c.subject_id }}{% if c.message %}<br><a href="{% url 'console:conversation_detail' c.conversation_id|default:c.message.conversation_id %}" class="text-teal-600 hover:underline text-xs">View conv</a>{% endif %}</td>
+        <td class="px-6 py-4">{% if c.conversation %}<a href="{% url 'console:conversation_detail' c.conversation_id %}" class="text-teal-600 hover:underline">{{ c.conversation_id }}</a>{% else %}—{% endif %}</td>
+        <td class="px-6 py-4">{% if c.customer %}<a href="{% url 'console:customer_detail' c.customer_id %}" class="text-teal-600 hover:underline">{{ c.customer_id }}</a>{% else %}—{% endif %}</td>
+        <td class="px-6 py-4">{{ c.mode|default:"—" }}</td>
+        <td class="px-6 py-4">{{ c.issue_type|default:"—" }}</td>
+        <td class="px-6 py-4">{{ c.corrected_by }}</td>
+        <td class="px-6 py-4 text-slate-500">{{ c.created_at|date:"Y-m-d H:i" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="px-6 py-8 text-center text-slate-500 text-sm">No corrections yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

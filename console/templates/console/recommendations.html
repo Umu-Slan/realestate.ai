@@ -1,0 +1,50 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Recommendations" %}{% endblock %}
+{% block content %}
+<div class="mb-8">
+  <h1 class="text-2xl font-bold text-slate-800">{% trans "Recommendations" %}</h1>
+  <p class="text-slate-500 text-sm mt-1">{% trans "Project matches with confidence, match reasons, and trade-offs." %}</p>
+</div>
+{% if recommendations %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  {% for r in recommendations %}
+  <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-200 card-hover">
+    <div class="flex flex-col sm:flex-row">
+      <div class="h-40 sm:h-auto sm:w-40 shrink-0 bg-gradient-to-br from-teal-100 to-slate-100 flex items-center justify-center">
+        <svg class="w-16 h-16 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      </div>
+      <div class="p-6 flex-1 min-w-0">
+        <h3 class="text-xl font-semibold text-slate-800 mb-2">{% if r.project %}{{ r.project.name }}{% else %}—{% endif %}</h3>
+        <div class="flex flex-wrap gap-2 mb-3">
+          {% if r.project and r.project.location %}<span class="inline-flex items-center gap-1 text-sm text-slate-600"><svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>{{ r.project.location }}</span>{% endif %}
+          {% if r.project.price_min or r.project.price_max %}<span class="text-sm font-medium text-teal-700">{% if r.project.price_min %}AED {{ r.project.price_min|floatformat:0 }}{% endif %}{% if r.project.price_min and r.project.price_max %} – {% endif %}{% if r.project.price_max %}AED {{ r.project.price_max|floatformat:0 }}{% endif %}</span>{% endif %}
+          {% if r.metadata.confidence %}
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-semibold {% if r.metadata.confidence >= 0.8 %}bg-green-100 text-green-800{% elif r.metadata.confidence >= 0.5 %}bg-amber-100 text-amber-800{% else %}bg-red-100 text-red-800{% endif %}">{% widthratio r.metadata.confidence 1 100 %}% {% trans "confidence" %}</span>
+          {% endif %}
+        </div>
+        {% if r.customer %}<a href="{% url 'console:customer_detail' r.customer.id %}" class="text-sm font-medium text-teal-600 hover:underline mb-2 block">{% if r.customer.identity %}{{ r.customer.identity.name|default:r.customer.identity.external_id|default:r.customer.id }}{% else %}{{ r.customer.id }}{% endif %}</a>{% endif %}
+        {% if r.rationale %}<p class="text-sm text-slate-600 leading-relaxed mb-3">{{ r.rationale|truncatewords:25 }}</p>{% endif %}
+        {% if r.metadata.why_it_matches or r.metadata.match_reasons or r.metadata.top_reasons %}
+        <div class="flex flex-wrap gap-1.5">
+          {% for reason in r.metadata.why_it_matches|default:r.metadata.match_reasons|default:r.metadata.top_reasons|slice:":4" %}
+          <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-slate-100 text-slate-700">{{ reason }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% if r.metadata.tradeoffs or r.metadata.trade_offs %}
+        <p class="text-xs text-amber-600 mt-2"><span class="font-medium">{% trans "Trade-offs" %}:</span> {{ r.metadata.tradeoffs|default:r.metadata.trade_offs|join:", "|truncatewords:5 }}</p>
+        {% endif %}
+        <p class="text-xs text-slate-400 mt-2">{{ r.created_at|date:"M d, Y" }}</p>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+{% trans "No recommendations yet" as no_rec_title %}
+{% trans "AI recommendations appear when customers chat about projects. Upload projects, then start a test chat to see matches." as no_rec_msg %}
+{% trans "Start test chat" as action_label %}
+{% include "console/includes/empty_state.html" with title=no_rec_title message=no_rec_msg icon="recommendations" action_url="/api/engines/demo/" action_label=action_label %}
+{% endif %}
+{% endblock %}

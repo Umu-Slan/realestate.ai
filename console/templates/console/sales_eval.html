@@ -1,0 +1,90 @@
+{% extends "console/base.html" %}
+{% block title %}Sales Evaluation Harness{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">Sales Evaluation Harness</h1>
+<p class="text-gray-600 mb-4">Measure multi-agent AI sales system quality: intent, qualification, stage, recommendation, objection handling, next-step, Arabic naturalness, repetition.</p>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  <div class="lg:col-span-2">
+    <div class="bg-white rounded shadow p-4">
+      <h2 class="font-semibold mb-2">Scenarios by Category</h2>
+      {% for cat, items in by_category.items %}
+      <div class="mb-3">
+        <h3 class="text-sm font-medium text-gray-600 capitalize">{{ cat|default:"other" }}</h3>
+        <div class="flex flex-wrap gap-2 mt-1">
+          {% for s in items %}
+          <span class="px-2 py-1 bg-slate-100 rounded text-sm">{{ s.name }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-slate-500 text-sm">No scenarios loaded. Run <code>python manage.py load_sales_eval_scenarios</code>.</p>
+      {% endfor %}
+    </div>
+
+    <div class="mt-4 bg-white rounded shadow p-4">
+      <h2 class="font-semibold mb-2">Recent Runs</h2>
+      {% if runs %}
+      <table class="w-full text-sm">
+        <thead><tr class="border-b"><th class="text-left py-1">Run ID</th><th class="text-left py-1">Passed</th><th class="text-left py-1">Date</th><th></th></tr></thead>
+        <tbody>
+          {% for r in runs %}
+          <tr class="border-b border-slate-100">
+            <td class="py-2 font-mono text-xs">{{ r.run_id }}</td>
+            <td class="py-2">{{ r.passed }}/{{ r.total_scenarios }}</td>
+            <td class="py-2">{{ r.created_at|date:"Y-m-d H:i" }}</td>
+            <td class="py-2"><a href="{% url 'console:sales_eval_run_detail' r.run_id %}" class="text-teal-600 hover:underline">Details</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-slate-500 text-sm">No runs yet. Run <code>python manage.py run_sales_eval</code>.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div>
+    <div class="bg-white rounded shadow p-4">
+      <h2 class="font-semibold mb-2">Latest Metrics</h2>
+      {% if last_run %}
+      <dl class="text-sm space-y-1">
+        <dt class="text-gray-500">Run</dt><dd class="font-mono text-xs">{{ last_run.run_id }}</dd>
+        <dt class="text-gray-500">Passed</dt><dd>{{ last_run.passed }}/{{ last_run.total_scenarios }}</dd>
+        <dt class="text-gray-500">Date</dt><dd>{{ last_run.created_at|date:"Y-m-d H:i" }}</dd>
+      </dl>
+      {% if last_run.metrics %}
+      <dl class="text-sm mt-3 space-y-1">
+        {% for k, v in last_run.metrics.items %}
+        <dt class="text-gray-500">{{ k }}</dt><dd>{{ v }}</dd>
+        {% endfor %}
+      </dl>
+      {% endif %}
+      <a href="{% url 'console:sales_eval_run_detail' last_run.run_id %}" class="mt-2 inline-block text-teal-600 hover:underline text-sm">View run details</a>
+      {% else %}
+      <p class="text-slate-500 text-sm">No runs yet.</p>
+      {% endif %}
+    </div>
+    <div class="mt-4 bg-white rounded shadow p-4">
+      <h2 class="font-semibold mb-2">Commands</h2>
+      <ul class="text-sm space-y-1 text-gray-700">
+        <li><code>load_sales_eval_scenarios</code> — Load scenarios</li>
+        <li><code>run_sales_eval</code> — Run full eval</li>
+        <li><code>run_sales_eval --no-llm</code> — Faster (rule-only)</li>
+      </ul>
+    </div>
+    <div class="mt-4 bg-white rounded shadow p-4">
+      <h2 class="font-semibold mb-2">Dimensions</h2>
+      <ul class="text-sm space-y-1 text-gray-600">
+        <li>intent — Intent accuracy</li>
+        <li>qualification — Qualification completeness</li>
+        <li>stage — Journey stage accuracy</li>
+        <li>recommendation — Recommendation relevance</li>
+        <li>objection — Objection handling quality</li>
+        <li>next_step — Next-step usefulness</li>
+        <li>arabic_naturalness — Arabic naturalness</li>
+        <li>repetition_score — 1 − repetition (higher = less repetitive)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

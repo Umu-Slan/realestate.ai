@@ -1,0 +1,22 @@
+"""Context processors for console templates."""
+from support.models import Escalation
+from core.enums import EscalationStatus
+
+
+def console_stats(request):
+    """Provide stats, company name, and notifications for top bar."""
+    base = {"stats": {"escalations_open": 0}, "company_name": None}
+    if not request.user.is_authenticated:
+        return base
+    company = None
+    try:
+        from companies.services import get_default_company
+        company = get_default_company()
+    except Exception:
+        pass
+    return {
+        "stats": {
+            "escalations_open": Escalation.objects.filter(status=EscalationStatus.OPEN).count(),
+        },
+        "company_name": company.name if company else None,
+    }

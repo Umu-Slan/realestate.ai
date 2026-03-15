@@ -1,0 +1,4 @@
+crm_id,name,phone,email,source,notes,project_interest,status
+DEMO-001,أحمد محمد,+201012345678,ahmed@demo.local,web,مهتم بشقق في القاهرة الجديدة,مشروع النخيل,new
+DEMO-002,Sara Ali,+201098765432,sara@demo.local,whatsapp,تحديد موعد زيارة,مشروع الريف,warm
+DEMO-003,Mohamed Hassan,+201055512345,mh@demo.local,web,استفسار عن التقسيط,مشروع النخيل,qualified

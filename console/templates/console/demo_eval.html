@@ -1,0 +1,52 @@
+{% extends "console/base.html" %}
+{% block title %}Demo Eval Mode{% endblock %}
+{% block content %}
+<h1 class="text-xl font-semibold mb-4">Demo Evaluation Mode</h1>
+<p class="text-gray-600 mb-4">Pick a scenario, replay through the pipeline, and inspect the output.</p>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  <div class="lg:col-span-2">
+    <div class="bg-white rounded shadow p-4">
+      <h2 class="font-semibold mb-2">Scenarios by Type</h2>
+      {% for stype, items in by_type.items %}
+      <div class="mb-3">
+        <h3 class="text-sm font-medium text-gray-600 capitalize">{{ stype|default:"other" }}</h3>
+        <div class="flex flex-wrap gap-2 mt-1">
+          {% for s in items %}
+          <a href="{% url 'console:demo_replay' s.id %}?run=1" class="px-2 py-1 bg-blue-100 rounded text-sm hover:bg-blue-200">
+            {{ s.name }}
+          </a>
+          <a href="{% url 'console:demo_replay' s.id %}" class="px-2 py-1 bg-slate-100 rounded text-sm hover:bg-slate-200" title="View without running">View only</a>
+          {% endfor %}
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-slate-500 text-sm">No scenarios loaded. Use the Tools page to load demo data, or run <code>python manage.py load_demo_scenarios</code>.</p>
+      {% endfor %}
+    </div>
+  </div>
+  <div>
+    <div class="bg-white rounded shadow p-4">
+      <h2 class="font-semibold mb-2">Last Eval Run</h2>
+      {% if last_run %}
+      <dl class="text-sm space-y-1">
+        <dt class="text-gray-500">Run ID</dt><dd>{{ last_run.run_id }}</dd>
+        <dt class="text-gray-500">Passed</dt><dd>{{ last_run.passed }}/{{ last_run.total_scenarios }}</dd>
+        <dt class="text-gray-500">Date</dt><dd>{{ last_run.created_at|date:"Y-m-d H:i" }}</dd>
+      </dl>
+      <a href="{% url 'console:demo_scenarios' %}" class="mt-2 inline-block text-teal-600 hover:underline text-sm">Tools</a>
+      {% else %}
+      <p class="text-slate-500 text-sm">No evaluation runs yet. Run <code>python manage.py run_demo_eval</code> to execute the full evaluation.</p>
+      {% endif %}
+    </div>
+    <div class="mt-4 bg-white rounded shadow p-4">
+      <h2 class="font-semibold mb-2">Commands</h2>
+      <ul class="text-sm space-y-1 text-gray-700">
+        <li><code>load_demo_scenarios</code> - Load scenarios</li>
+        <li><code>run_demo_eval</code> - Run full eval</li>
+        <li><code>print_demo_report</code> - Print report</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

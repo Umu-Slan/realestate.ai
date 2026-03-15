@@ -1,0 +1,97 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Document" %} {{ document.id }}{% endblock %}
+{% block content %}
+<div class="mb-6">
+  <a href="{% url 'console:knowledge' %}" class="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-teal-600 transition">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    {% trans "Knowledge" %}
+  </a>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-3">
+  <div class="lg:col-span-2 space-y-6">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100">
+        <h2 class="text-lg font-semibold text-slate-800">{% trans "Document Metadata" %}</h2>
+      </div>
+      <div class="p-6">
+        <dl class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+          <div><dt class="text-slate-500 font-medium">{% trans "Title" %}</dt><dd class="text-slate-800 mt-0.5">{{ document.title }}</dd></div>
+          <div><dt class="text-slate-500 font-medium">{% trans "Type" %}</dt><dd class="text-slate-800 mt-0.5">{{ document.document_type }}</dd></div>
+          <div><dt class="text-slate-500 font-medium">{% trans "Status" %}</dt><dd class="mt-0.5">
+            <span class="inline-flex px-2 py-0.5 rounded text-xs font-medium {% if document.status == 'processed' %}bg-emerald-50 text-emerald-700{% elif document.status == 'processing' %}bg-amber-50 text-amber-700{% else %}bg-slate-100 text-slate-600{% endif %}">{{ document.status }}</span>
+          </dd></div>
+          <div><dt class="text-slate-500 font-medium">{% trans "Access" %}</dt><dd class="text-slate-800 mt-0.5">{{ document.access_level|default:"internal" }}</dd></div>
+          <div><dt class="text-slate-500 font-medium">{% trans "Verification" %}</dt><dd class="text-slate-800 mt-0.5">{{ document.verification_status }}</dd></div>
+          <div><dt class="text-slate-500 font-medium">{% trans "Fresh" %}</dt><dd class="mt-0.5">{% if is_fresh %}<span class="text-emerald-600">{% trans "Yes" %}</span>{% else %}<span class="text-amber-600">{% trans "No" %}</span>{% endif %}</dd></div>
+          <div><dt class="text-slate-500 font-medium">{% trans "Version" %}</dt><dd class="text-slate-800 mt-0.5">{{ document.version }}</dd></div>
+          <div><dt class="text-slate-500 font-medium">{% trans "Source of truth" %}</dt><dd class="text-slate-800 mt-0.5">{{ document.source_of_truth|yesno:"Yes,No" }}</dd></div>
+          <div><dt class="text-slate-500 font-medium">{% trans "Last verified" %}</dt><dd class="text-slate-800 mt-0.5">{{ document.last_verified_at|date:"Y-m-d"|default:"—" }}</dd></div>
+          <div><dt class="text-slate-500 font-medium">{% trans "Validity end" %}</dt><dd class="text-slate-800 mt-0.5">{{ document.validity_window_end|date:"Y-m-d"|default:"—" }}</dd></div>
+          <div><dt class="text-slate-500 font-medium">{% trans "Project" %}</dt><dd class="text-slate-800 mt-0.5">{% if document.project %}<a href="{% url 'console:structured_facts_project' document.project.id %}" class="text-teal-600 hover:underline">{{ document.project.name }}</a>{% else %}—{% endif %}</dd></div>
+        </dl>
+        <p class="text-xs text-slate-500 mt-4 p-3 bg-slate-50 rounded-lg">{% trans "Retrieval safety: exact pricing/availability never come from chunks; use Project model. Unverified docs trigger disclaimers." %}</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100">
+        <h2 class="text-lg font-semibold text-slate-800">{% trans "Chunk Previews" %}</h2>
+      </div>
+      <div class="p-6">
+        <ul class="space-y-3">
+          {% for ch in chunks %}
+          <li class="p-4 bg-slate-50 rounded-lg border border-slate-100">
+            <div class="flex flex-wrap gap-2 items-center text-xs text-slate-500 mb-2">
+              <span class="font-medium">#{{ ch.chunk_index }} · {{ ch.chunk_type }}</span>
+              {% if ch._retrieval_meta %}
+              <span>doc:{{ ch._retrieval_meta.document_type }}</span>
+              <span>verify:{{ ch._retrieval_meta.verification_status }}</span>
+              <span>access:{{ ch._retrieval_meta.access_level }}</span>
+              {% endif %}
+            </div>
+            <div class="text-sm text-slate-700">{{ ch.content|truncatewords:50 }}</div>
+          </li>
+          {% empty %}
+          <li class="py-8 text-center">
+            <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <p class="text-slate-500 text-sm">{% trans "No chunks yet. Document may still be processing." %}</p>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="lg:col-span-1">
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
+      <div class="px-6 py-4 border-b border-slate-100">
+        <h2 class="text-lg font-semibold text-slate-800">{% trans "Retrieval Test" %}</h2>
+      </div>
+      <div class="p-6">
+        <form action="{% url 'console:knowledge_doc_detail' document.id %}" method="get" class="space-y-3">
+          <input type="text" name="q" placeholder="e.g. أسعار الشقق" class="w-full px-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500" value="{{ query }}">
+          <button type="submit" class="w-full px-4 py-2.5 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition">{% trans "Test" %}</button>
+        </form>
+        {% if retrieval_results %}
+        <div class="mt-4 space-y-3">
+          <p class="text-sm font-medium text-slate-700">{% trans "Top matches" %}:</p>
+          {% for r in retrieval_results %}
+          <div class="p-3 bg-slate-50 rounded-lg text-sm border border-slate-100">
+            <span class="text-xs text-slate-500">Score {{ r.score|floatformat:2 }} · {{ r.chunk_type }} · fresh={{ r.is_fresh }} · exact_pricing={{ r.can_use_for_exact_pricing }}</span>
+            <div class="mt-1.5 text-slate-700">{{ r.content|truncatewords:30 }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% if fallback_note %}
+        <p class="text-amber-600 text-sm mt-3 italic">{{ fallback_note }}</p>
+        {% endif %}
+        {% elif query %}
+        <p class="text-xs text-slate-500 mt-3">{% trans "No matches yet, or embedding not available. Full retrieval runs via the orchestration or intelligence APIs." %}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

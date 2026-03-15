@@ -1,0 +1,95 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Search" %}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-800 mb-6">{% trans "Search" %}</h1>
+<form method="get" action="{% url 'console:search' %}" class="mb-6 max-w-xl">
+  <div class="relative">
+    <input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Search customers, conversations, projects, documents, support...' %}" class="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500" autofocus>
+    <svg class="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+  </div>
+</form>
+
+{% if q %}
+<div class="space-y-6">
+  <div>
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "Customers" %}</h2>
+    {% if results.customers %}
+    <div class="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
+      {% for c in results.customers %}
+      <a href="{% url 'console:customer_detail' c.id %}" class="block p-4 hover:bg-slate-50 transition">
+        <span class="font-medium text-slate-800">{% if c.identity %}{{ c.identity.name|default:c.identity.external_id }}{% else %}Customer #{{ c.id }}{% endif %}</span>
+        <span class="text-sm text-slate-500">#{{ c.id }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-slate-500 text-sm">{% trans "No customers found." %}</p>
+    {% endif %}
+  </div>
+  <div>
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "Conversations" %}</h2>
+    {% if results.conversations %}
+    <div class="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
+      {% for c in results.conversations %}
+      <a href="{% url 'console:conversation_detail' c.id %}" class="block p-4 hover:bg-slate-50 transition">
+        <span class="font-medium text-slate-800">{% if c.customer.identity %}{{ c.customer.identity.name|default:c.customer.identity.external_id }}{% else %}Conv #{{ c.id }}{% endif %}</span>
+        <span class="text-sm text-slate-500">#{{ c.id }} · {{ c.channel }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-slate-500 text-sm">{% trans "No conversations found." %}</p>
+    {% endif %}
+  </div>
+  <div>
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "Projects" %}</h2>
+    {% if results.projects %}
+    <div class="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
+      {% for p in results.projects %}
+      <a href="{% url 'console:structured_facts_project' p.id %}" class="block p-4 hover:bg-slate-50 transition">
+        <span class="font-medium text-slate-800">{{ p.name }}</span>
+        {% if p.name_ar %}<span class="text-slate-600">({{ p.name_ar }})</span>{% endif %}
+        {% if p.location %}<span class="text-sm text-slate-500">· {{ p.location }}</span>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-slate-500 text-sm">{% trans "No projects found." %}</p>
+    {% endif %}
+  </div>
+  <div>
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "Documents" %}</h2>
+    {% if results.documents %}
+    <div class="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
+      {% for d in results.documents %}
+      <a href="{% url 'console:knowledge_doc_detail' d.id %}" class="block p-4 hover:bg-slate-50 transition">
+        <span class="font-medium text-slate-800">{{ d.title|truncatechars:50 }}</span>
+        <span class="text-sm text-slate-500">· {{ d.document_type }} · {{ d.status }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-slate-500 text-sm">{% trans "No documents found." %}</p>
+    {% endif %}
+  </div>
+  <div>
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "Support Cases" %}</h2>
+    {% if results.support_cases %}
+    <div class="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
+      {% for c in results.support_cases %}
+      <a href="{% url 'console:support_case_detail' c.id %}" class="block p-4 hover:bg-slate-50 transition">
+        <span class="font-medium text-slate-800">#{{ c.id }} · {{ c.category }}</span>
+        <span class="text-sm text-slate-500 block mt-1">{{ c.summary|truncatewords:15|default:"—" }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-slate-500 text-sm">{% trans "No support cases found." %}</p>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<p class="text-slate-500">{% trans "Enter a search term to find customers, conversations, projects, or support cases." %}</p>
+{% endif %}
+{% endblock %}

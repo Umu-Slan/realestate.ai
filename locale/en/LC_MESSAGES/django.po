@@ -1,0 +1,148 @@
+# English translations for Real Estate AI
+# Copyright (C) 2025
+# This file is distributed under the same license as the Real Estate AI package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 12:00+0000\n"
+"PO-Revision-Date: 2025-03-10 12:00+0000\n"
+"Last-Translator: \n"
+"Language: en\n"
+"Language-Team: English\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# English is the fallback/source; msgstr left empty to use msgid
+
+msgid "Operator Console"
+msgstr ""
+
+msgid "Conversations"
+msgstr ""
+
+msgid "Customers"
+msgstr ""
+
+msgid "Support"
+msgstr ""
+
+msgid "Escalations"
+msgstr ""
+
+msgid "Recommendations"
+msgstr ""
+
+msgid "Knowledge"
+msgstr ""
+
+msgid "Facts"
+msgstr ""
+
+msgid "Company"
+msgstr ""
+
+msgid "Onboarding"
+msgstr ""
+
+msgid "Analytics"
+msgstr ""
+
+msgid "Audit"
+msgstr ""
+
+msgid "Operations"
+msgstr ""
+
+msgid "Corrections"
+msgstr ""
+
+msgid "Improvement"
+msgstr ""
+
+msgid "Chat"
+msgstr ""
+
+msgid "Tools"
+msgstr ""
+
+msgid "Logout"
+msgstr ""
+
+msgid "Dashboard"
+msgstr ""
+
+msgid "Period"
+msgstr ""
+
+msgid "7 days"
+msgstr ""
+
+msgid "30 days"
+msgstr ""
+
+msgid "90 days"
+msgstr ""
+
+msgid "No data"
+msgstr ""
+
+msgid "Add data or run a flow to get started."
+msgstr ""
+
+msgid "No messages yet"
+msgstr ""
+
+msgid "No conversations"
+msgstr ""
+
+msgid "Conversations will appear here when customers interact with the chat."
+msgstr ""
+
+msgid "Open Chat"
+msgstr ""
+
+msgid "No customers"
+msgstr ""
+
+msgid "Customers will appear when conversations are created."
+msgstr ""
+
+msgid "Conversation Inbox"
+msgstr ""
+
+msgid "Customer"
+msgstr ""
+
+msgid "Channel"
+msgstr ""
+
+msgid "Messages"
+msgstr ""
+
+msgid "Created"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Profile"
+msgstr ""
+
+msgid "Login"
+msgstr ""
+
+msgid "Invalid username or password."
+msgstr ""
+
+msgid "Username"
+msgstr ""
+
+msgid "Password"
+msgstr ""
+
+msgid "Log in"
+msgstr ""

@@ -1,0 +1,48 @@
+{% extends "console/base.html" %}
+{% block title %}Tools{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-800 mb-6">Tools</h1>
+
+<div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+  <strong class="text-amber-800">Demo Eval:</strong> <a href="{% url 'console:demo_eval' %}" class="text-teal-600 hover:underline">Pick scenario, replay, inspect output</a>
+  &middot;
+  <strong class="text-amber-800">Sales Eval:</strong> <a href="{% url 'console:sales_eval' %}" class="text-teal-600 hover:underline">Sales evaluation harness (8 dimensions)</a>
+</div>
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+  <h2 class="text-lg font-semibold text-slate-800 mb-3">Quick Links</h2>
+  <p class="text-slate-600 mb-4">Open in new tabs to test different flows.</p>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <a href="/api/engines/demo/" target="_blank" class="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition">
+      <strong class="text-slate-800">Product Chat</strong>
+      <p class="text-sm text-slate-600 mt-1">Sales, Support, Recommendation chat</p>
+    </a>
+    <a href="/api/intelligence/analyze/" target="_blank" class="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition">
+      <strong class="text-slate-800">Intelligence API</strong>
+      <p class="text-sm text-slate-600 mt-1">POST to classify and score messages</p>
+    </a>
+    <a href="/api/orchestration/run/" target="_blank" class="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition">
+      <strong class="text-slate-800">Orchestration API</strong>
+      <p class="text-sm text-slate-600 mt-1">Full pipeline run</p>
+    </a>
+    <a href="{% url 'console:conversations' %}" class="p-4 border border-slate-200 rounded-xl hover:bg-slate-50 transition">
+      <strong class="text-slate-800">Conversation Inbox</strong>
+      <p class="text-sm text-slate-600 mt-1">Inspect conversations</p>
+    </a>
+  </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+  <h2 class="text-lg font-semibold text-slate-800 mb-3">Workflow Guide</h2>
+  <ol class="list-decimal list-inside space-y-2 text-slate-700">
+    <li>Start with <strong>Dashboard</strong> to see overview.</li>
+    <li>Go to <strong>Conversations</strong> → click a conversation to see messages, intent, score, qualification.</li>
+    <li>Go to <strong>Customers</strong> → click a customer for profile, CRM history, timeline, past temperatures.</li>
+    <li>Check <strong>Support Cases</strong> and <strong>Escalations</strong> queues.</li>
+    <li>View <strong>Recommendations</strong> panel.</li>
+    <li>Inspect <strong>Knowledge</strong> → open a document for metadata, chunk previews.</li>
+    <li>Browse <strong>Audit Log</strong> for all system actions.</li>
+    <li>Use <strong>Corrections</strong> to submit human corrections or mark responses.</li>
+    <li>Use the <strong>Tools</strong> quick links to test engines and APIs.</li>
+  </ol>
+</div>
+{% endblock %}

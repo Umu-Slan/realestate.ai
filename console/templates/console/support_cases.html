@@ -1,0 +1,107 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Support Cases" %}{% endblock %}
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <h1 class="text-2xl font-bold text-slate-800">{% trans "Support Cases" %}</h1>
+  <form method="get" class="flex flex-wrap gap-2 items-center">
+    <input type="text" name="category" value="{{ filter_category|default:'' }}" placeholder="{% trans 'Category' %}" class="px-3 py-1.5 border border-slate-200 rounded-lg text-sm w-32">
+    <select name="severity" class="px-3 py-1.5 border border-slate-200 rounded-lg text-sm bg-white">
+      <option value="">{% trans "All severity" %}</option>
+      <option value="low" {% if filter_severity == 'low' %}selected{% endif %}>{% trans "Low" %}</option>
+      <option value="medium" {% if filter_severity == 'medium' %}selected{% endif %}>{% trans "Medium" %}</option>
+      <option value="high" {% if filter_severity == 'high' %}selected{% endif %}>{% trans "High" %}</option>
+      <option value="critical" {% if filter_severity == 'critical' %}selected{% endif %}>{% trans "Critical" %}</option>
+    </select>
+    <button type="submit" class="px-3 py-1.5 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-500">{% trans "Filter" %}</button>
+    {% if filter_category or filter_severity %}<a href="{% url 'console:support_cases' %}" class="text-sm text-slate-500 hover:underline">{% trans "Clear" %}</a>{% endif %}
+  </form>
+</div>
+<p class="text-sm text-slate-600 mb-4">{% trans "Total" %}: <strong class="text-slate-800">{{ cases|length }}</strong> · {% trans "Open" %}: <strong class="{% if columns.open %}text-red-600{% else %}text-slate-800{% endif %}">{{ columns.open|length }}</strong></p>
+
+{% if cases %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
+  <div class="min-w-[260px]">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="w-2 h-2 rounded-full bg-red-500"></div>
+      <h2 class="font-semibold text-slate-800">{% trans "Open" %}</h2>
+      <span class="text-sm text-slate-500">({{ columns.open|length }})</span>
+    </div>
+    <div class="space-y-3">
+      {% for c in columns.open %}
+      <a href="{% url 'console:support_case_detail' c.id %}" class="block p-4 bg-white rounded-xl border border-slate-200 hover:border-teal-200 hover:shadow-md transition">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-medium text-slate-800">#{{ c.id }}</span>
+          <span class="badge-{% if c.severity == 'critical' %}critical{% elif c.severity == 'high' %}high{% elif c.severity == 'medium' %}medium{% else %}low{% endif %} px-2 py-0.5 rounded text-xs">{{ c.get_severity_display|default:c.severity }}</span>
+        </div>
+        <p class="text-sm text-slate-600 mt-1 line-clamp-2">{{ c.summary|truncatewords:15|default:c.category }}</p>
+        <p class="text-xs text-slate-500 mt-2">{% if c.customer.identity %}{{ c.customer.identity.name|default:c.customer.id }}{% else %}{{ c.customer.id }}{% endif %}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="min-w-[260px]">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+      <h2 class="font-semibold text-slate-800">{% trans "In Progress" %}</h2>
+      <span class="text-sm text-slate-500">({{ columns.in_progress|length }})</span>
+    </div>
+    <div class="space-y-3">
+      {% for c in columns.in_progress %}
+      <a href="{% url 'console:support_case_detail' c.id %}" class="block p-4 bg-white rounded-xl border border-slate-200 hover:border-teal-200 hover:shadow-md transition">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-medium text-slate-800">#{{ c.id }}</span>
+          <span class="badge-in-progress px-2 py-0.5 rounded text-xs">{% trans "In progress" %}</span>
+        </div>
+        <p class="text-sm text-slate-600 mt-1 line-clamp-2">{{ c.summary|truncatewords:15|default:c.category }}</p>
+        <p class="text-xs text-slate-500 mt-2">{% if c.customer.identity %}{{ c.customer.identity.name|default:c.customer.id }}{% else %}{{ c.customer.id }}{% endif %}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="min-w-[260px]">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+      <h2 class="font-semibold text-slate-800">{% trans "Escalated" %}</h2>
+      <span class="text-sm text-slate-500">({{ columns.escalated|length }})</span>
+    </div>
+    <div class="space-y-3">
+      {% for c in columns.escalated %}
+      <a href="{% url 'console:support_case_detail' c.id %}" class="block p-4 bg-white rounded-xl border border-slate-200 hover:border-teal-200 hover:shadow-md transition">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-medium text-slate-800">#{{ c.id }}</span>
+          <span class="badge-critical px-2 py-0.5 rounded text-xs">{% trans "Escalated" %}</span>
+        </div>
+        <p class="text-sm text-slate-600 mt-1 line-clamp-2">{{ c.summary|truncatewords:15|default:c.category }}</p>
+        <p class="text-xs text-slate-500 mt-2">{% if c.customer.identity %}{{ c.customer.identity.name|default:c.customer.id }}{% else %}{{ c.customer.id }}{% endif %}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="min-w-[260px]">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="w-2 h-2 rounded-full bg-green-500"></div>
+      <h2 class="font-semibold text-slate-800">{% trans "Resolved" %}</h2>
+      <span class="text-sm text-slate-500">({{ columns.resolved|length }})</span>
+    </div>
+    <div class="space-y-3">
+      {% for c in columns.resolved %}
+      <a href="{% url 'console:support_case_detail' c.id %}" class="block p-4 bg-white rounded-xl border border-slate-200 hover:border-teal-200 hover:shadow-md transition">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-medium text-slate-800">#{{ c.id }}</span>
+          <span class="badge-resolved px-2 py-0.5 rounded text-xs">{% trans "Resolved" %}</span>
+        </div>
+        <p class="text-sm text-slate-600 mt-1 line-clamp-2">{{ c.summary|truncatewords:15|default:c.category }}</p>
+        <p class="text-xs text-slate-500 mt-2">{% if c.customer.identity %}{{ c.customer.identity.name|default:c.customer.id }}{% else %}{{ c.customer.id }}{% endif %}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% else %}
+{% trans "No support cases yet" as no_sup_title %}
+{% trans "Support cases are created when customer inquiries require follow-up. Start a conversation to see how the AI handles support requests." as no_sup_msg %}
+{% trans "Start test chat" as action_label %}
+{% include "console/includes/empty_state.html" with title=no_sup_title message=no_sup_msg icon="support" action_url="/api/engines/demo/" action_label=action_label %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Escalations" %}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-800 mb-6">{% trans "Escalations Queue" %}</h1>
+<div class="mb-4 flex items-center gap-4">
+  <span class="text-sm text-slate-600">{% trans "Open" %}: <strong class="{% if stats.escalations_open %}text-red-600{% else %}text-slate-800{% endif %}">{{ stats.escalations_open|default:0 }}</strong></span>
+</div>
+{% if escalations %}
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+  <table class="min-w-full divide-y divide-slate-200">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="px-6 py-3 text-start text-xs font-medium text-slate-500 uppercase">ID</th>
+        <th class="px-6 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Customer" %}</th>
+        <th class="px-6 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Reason" %}</th>
+        <th class="px-6 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Status" %}</th>
+        <th class="px-6 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Handoff Preview" %}</th>
+        <th class="px-6 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Created" %}</th>
+        <th class="px-6 py-3 text-start text-xs font-medium text-slate-500 uppercase"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200">
+      {% for e in escalations %}
+      <tr class="hover:bg-slate-50">
+        <td class="px-6 py-4 text-sm font-medium">
+          <a href="{% url 'console:escalation_detail' e.id %}" class="text-teal-600 hover:underline">{{ e.id }}</a>
+        </td>
+        <td class="px-6 py-4 text-sm">
+          {% if e.customer %}
+          <a href="{% url 'console:customer_detail' e.customer.id %}" class="text-teal-600 hover:underline">
+            {% if e.customer.identity %}{{ e.customer.identity.name|default:e.customer.identity.external_id|default:e.customer.id }}{% else %}{{ e.customer.id }}{% endif %}
+          </a>
+          {% else %}
+          —
+          {% endif %}
+        </td>
+        <td class="px-6 py-4"><span class="px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-800">{{ e.get_reason_display|default:e.reason }}</span></td>
+        <td class="px-6 py-4"><span class="badge-{% if e.status == 'open' %}open{% elif e.status == 'in_progress' %}in-progress{% else %}resolved{% endif %} px-2 py-0.5 rounded text-xs">{{ e.get_status_display|default:e.status }}</span></td>
+        <td class="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">
+          {% if e.handoff_summary %}
+          {{ e.handoff_summary.intent_summary|default:e.handoff_summary.intent.primary|default:e.handoff_summary.recommended_next_step|default:"—" }}
+          {% else %}
+          —
+          {% endif %}
+        </td>
+        <td class="px-6 py-4 text-sm text-slate-500">{{ e.created_at|date:"M d, Y H:i" }}</td>
+        <td class="px-6 py-4 text-sm">
+          <span class="text-slate-400">
+            {% if e.conversation %}<a href="{% url 'console:conversation_detail' e.conversation.id %}" class="text-teal-600 hover:underline">{% trans "Conv" %}</a>{% endif %}
+            {% for sc in e.support_cases.all %}<a href="{% url 'console:support_case_detail' sc.id %}" class="text-teal-600 hover:underline">#{{ sc.id }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}
+          </span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{% trans "No escalations" as no_esc_title %}
+{% trans "Escalations will appear when customers request agent handoff or the system flags a conversation." as no_esc_msg %}
+{% include "console/includes/empty_state.html" with title=no_esc_title message=no_esc_msg %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "console/base.html" %}
+{% block title %}Escalation {{ escalation.id }}{% endblock %}
+{% block content %}
+<nav class="mb-6">
+  <a href="{% url 'console:escalations' %}" class="text-sm text-teal-600 hover:underline">← Back to Escalations</a>
+</nav>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 space-y-6">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-lg font-semibold text-slate-800 mb-4">Escalation #{{ escalation.id }}</h2>
+      <dl class="grid grid-cols-2 gap-3 text-sm">
+        <div><dt class="text-slate-500">Reason</dt><dd><span class="px-2 py-0.5 rounded text-xs bg-amber-100 text-amber-800">{{ escalation.get_reason_display|default:escalation.reason }}</span></dd></div>
+        <div><dt class="text-slate-500">Status</dt><dd><span class="badge-{% if escalation.status == 'open' %}open{% elif escalation.status == 'in_progress' %}in-progress{% else %}resolved{% endif %} px-2 py-0.5 rounded text-xs">{{ escalation.get_status_display|default:escalation.status }}</span></dd></div>
+        <div><dt class="text-slate-500">Created</dt><dd>{{ escalation.created_at|date:"Y-m-d H:i" }}</dd></div>
+        <div><dt class="text-slate-500">Resolved</dt><dd>{{ escalation.resolved_at|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+        {% if escalation.notes %}
+        <div class="col-span-2"><dt class="text-slate-500">Notes</dt><dd>{{ escalation.notes }}</dd></div>
+        {% endif %}
+      </dl>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-lg font-semibold text-slate-800 mb-4">Handoff Summary</h2>
+      {% if escalation.handoff_summary %}
+      <div class="space-y-2 text-sm">
+        {% if escalation.handoff_summary.customer_identity %}
+        <div><strong>Customer:</strong> {{ escalation.handoff_summary.customer_identity.name|default:"—" }} | {{ escalation.handoff_summary.customer_identity.phone|default:"" }} | {{ escalation.handoff_summary.customer_identity.email|default:"" }}</div>
+        {% endif %}
+        {% if escalation.handoff_summary.intent_summary %}
+        <div><strong>Intent:</strong> {{ escalation.handoff_summary.intent_summary }}</div>
+        {% endif %}
+        {% if escalation.handoff_summary.qualification_summary %}
+        <div><strong>Qualification:</strong> {{ escalation.handoff_summary.qualification_summary }}</div>
+        {% endif %}
+        {% if escalation.handoff_summary.score_and_category %}
+        <div><strong>Score:</strong> {{ escalation.handoff_summary.score_and_category }}</div>
+        {% endif %}
+        {% if escalation.handoff_summary.support_category %}
+        <div><strong>Support category:</strong> {{ escalation.handoff_summary.support_category }}</div>
+        {% endif %}
+        {% if escalation.handoff_summary.routing %}
+        <div><strong>Routing:</strong> {{ escalation.handoff_summary.routing.route|default:"" }} → {{ escalation.handoff_summary.routing.queue|default:"" }}</div>
+        {% endif %}
+        {% if escalation.handoff_summary.risk_notes %}
+        <div><strong>Risk flags:</strong> {{ escalation.handoff_summary.risk_notes|join:", " }}</div>
+        {% endif %}
+        {% if escalation.handoff_summary.recommended_next_step %}
+        <div><strong>Recommended next action:</strong> {{ escalation.handoff_summary.recommended_next_step }}</div>
+        {% endif %}
+        {% if escalation.handoff_summary.conversation_summary %}
+        <div class="pt-2 border-t"><strong>Conversation:</strong> {{ escalation.handoff_summary.conversation_summary|truncatewords:50 }}</div>
+        {% endif %}
+        {% if escalation.handoff_summary.last_message %}
+        <div class="pt-2 border-t"><strong>Last message:</strong> {{ escalation.handoff_summary.last_message|truncatewords:30 }}</div>
+        {% endif %}
+      </div>
+      {% else %}
+      <p class="text-slate-500 text-sm">No handoff summary available.</p>
+      {% endif %}
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-lg font-semibold text-slate-800 mb-4">Links</h2>
+      <ul class="space-y-2 text-sm">
+        {% if escalation.customer %}
+        <li><a href="{% url 'console:customer_detail' escalation.customer.id %}" class="text-teal-600 hover:underline font-medium">Customer {{ escalation.customer.id }}</a> — {{ escalation.customer.identity.name|default:"—" }}</li>
+        {% endif %}
+        {% if escalation.conversation %}
+        <li><a href="{% url 'console:conversation_detail' escalation.conversation.id %}" class="text-teal-600 hover:underline font-medium">Conversation {{ escalation.conversation.id }}</a></li>
+        {% endif %}
+        {% for sc in escalation.support_cases.all %}
+        <li><a href="{% url 'console:support_case_detail' sc.id %}" class="text-teal-600 hover:underline font-medium">Support Case {{ sc.id }}</a> — {{ sc.category }}</li>
+        {% empty %}
+        <li class="text-slate-500 text-sm">No linked support cases.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <h2 class="text-sm font-semibold text-slate-800 mb-3">Full Handoff (JSON)</h2>
+      <pre class="text-xs overflow-x-auto bg-slate-50 p-3 rounded-lg max-h-96 overflow-y-auto text-slate-700">{{ handoff_json }}</pre>
+    </div>
+  </div>
+</div>
+{% endblock %}

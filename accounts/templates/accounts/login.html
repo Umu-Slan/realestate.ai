@@ -1,0 +1,38 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:'en' }}" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% trans "Login" %} | Real Estate AI Operator Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8 max-w-md w-full">
+    <h1 class="text-xl font-bold text-slate-800 mb-6">{% trans "Operator Console" %}</h1>
+    {% if form.errors %}
+    <div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-800 rounded text-sm">
+      {% trans "Invalid username or password." %}
+    </div>
+    {% endif %}
+    <form method="post" action="{% url 'accounts:login' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next|default:'/console/' }}">
+      <div class="mb-4">
+        <label for="id_username" class="block text-sm font-medium text-slate-700 mb-1">{% trans "Username" %}</label>
+        <input type="text" name="username" id="id_username" required autofocus
+          class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+      </div>
+      <div class="mb-6">
+        <label for="id_password" class="block text-sm font-medium text-slate-700 mb-1">{% trans "Password" %}</label>
+        <input type="password" name="password" id="id_password" required
+          class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+      </div>
+      <button type="submit" class="w-full py-2 px-4 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">
+        {% trans "Log in" %}
+      </button>
+    </form>
+    <p class="mt-4 text-xs text-slate-500">Real Estate AI Operator Console</p>
+  </div>
+</body>
+</html>

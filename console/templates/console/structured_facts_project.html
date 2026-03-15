@@ -1,0 +1,80 @@
+{% extends "console/base.html" %}
+{% block title %}Structured Facts: {{ project.name }}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'console:structured_facts' %}" class="text-blue-600 hover:underline">← Structured Facts</a>
+</div>
+
+<h1 class="text-xl font-semibold mb-4">{{ project.name }}</h1>
+<p class="text-sm text-gray-600 mb-4">Operators can inspect and update via <a href="/admin/knowledge/project/{{ project.id }}/change/" class="text-blue-600">Django Admin</a>.</p>
+
+<div class="grid gap-4">
+  <div class="bg-white rounded shadow p-4">
+    <h2 class="font-semibold mb-2">Pricing (Project-level)</h2>
+    <dl class="grid grid-cols-2 gap-2 text-sm">
+      <dt class="text-gray-500">Verified</dt><dd>{% if facts.pricing.is_verified %}<span class="text-green-600">Yes</span>{% else %}<span class="text-amber-600">No</span>{% endif %}</dd>
+      <dt class="text-gray-500">Price min</dt><dd>{{ facts.pricing.value.price_min|floatformat:0|default:"—" }}</dd>
+      <dt class="text-gray-500">Price max</dt><dd>{{ facts.pricing.value.price_max|floatformat:0|default:"—" }}</dd>
+      <dt class="text-gray-500">Last verified</dt><dd>{{ facts.pricing.last_verified_at|default:"—" }}</dd>
+      <dt class="text-gray-500">Source</dt><dd>{{ facts.pricing.source }}</dd>
+    </dl>
+  </div>
+
+  <div class="bg-white rounded shadow p-4">
+    <h2 class="font-semibold mb-2">Availability</h2>
+    <dl class="grid grid-cols-2 gap-2 text-sm">
+      <dt class="text-gray-500">Verified</dt><dd>{% if facts.availability.is_verified %}<span class="text-green-600">Yes</span>{% else %}<span class="text-amber-600">No</span>{% endif %}</dd>
+      <dt class="text-gray-500">Status</dt><dd>{{ facts.availability.value|default:"—" }}</dd>
+      <dt class="text-gray-500">Last verified</dt><dd>{{ facts.availability.last_verified_at|default:"—" }}</dd>
+    </dl>
+  </div>
+
+  <div class="bg-white rounded shadow p-4">
+    <h2 class="font-semibold mb-2">Payment Plan</h2>
+    {% if facts.payment_plan.value %}
+    <dl class="grid grid-cols-2 gap-2 text-sm">
+      <dt class="text-gray-500">Verified</dt><dd>{% if facts.payment_plan.is_verified %}<span class="text-green-600">Yes</span>{% else %}<span class="text-amber-600">No</span>{% endif %}</dd>
+      <dt class="text-gray-500">Down payment %</dt><dd>{{ facts.payment_plan.value.down_payment_pct_min|default:"—" }}–{{ facts.payment_plan.value.down_payment_pct_max|default:"—" }}</dd>
+      <dt class="text-gray-500">Installment years</dt><dd>{{ facts.payment_plan.value.installment_years_min|default:"—" }}–{{ facts.payment_plan.value.installment_years_max|default:"—" }}</dd>
+      <dt class="text-gray-500">Source</dt><dd>{{ facts.payment_plan.source }}</dd>
+    </dl>
+    {% else %}
+    <p class="text-sm text-slate-500">No payment plan data.</p>
+    {% endif %}
+  </div>
+
+  <div class="bg-white rounded shadow p-4">
+    <h2 class="font-semibold mb-2">Delivery Timeline</h2>
+    {% if facts.delivery.value %}
+    <dl class="grid grid-cols-2 gap-2 text-sm">
+      <dt class="text-gray-500">Verified</dt><dd>{% if facts.delivery.is_verified %}<span class="text-green-600">Yes</span>{% else %}<span class="text-amber-600">No</span>{% endif %}</dd>
+      <dt class="text-gray-500">Phase</dt><dd>{{ facts.delivery.value.phase_name }}</dd>
+      <dt class="text-gray-500">Expected start</dt><dd>{{ facts.delivery.value.expected_start_date|default:"—" }}</dd>
+      <dt class="text-gray-500">Expected end</dt><dd>{{ facts.delivery.value.expected_end_date|default:"—" }}</dd>
+    </dl>
+    {% else %}
+    <p class="text-sm text-slate-500">No delivery timeline data.</p>
+    {% endif %}
+  </div>
+
+  <div class="bg-white rounded shadow p-4">
+    <h2 class="font-semibold mb-2">Unit Categories</h2>
+    {% if facts.unit_categories %}
+    <table class="min-w-full text-sm">
+      <thead><tr><th class="text-left">Category</th><th class="text-left">Price min</th><th class="text-left">Price max</th><th class="text-left">Qty</th><th class="text-left">Verified</th></tr></thead>
+      <tbody>
+        {% for u in facts.unit_categories %}
+        <tr><td>{{ u.category_name }}</td><td>{{ u.price_min|floatformat:0|default:"—" }}</td><td>{{ u.price_max|floatformat:0|default:"—" }}</td><td>{{ u.quantity_available|default:"—" }}</td><td>{% if u.is_verified %}&#10003;{% else %}&#9675;{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="text-sm text-slate-500">No unit categories.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="mt-4 p-4 bg-gray-50 rounded text-sm">
+  <strong>Response safety:</strong> When facts are unverified, the system uses safe fallback language (e.g. "confirm with sales team") instead of stating exact numbers as authoritative.
+</div>
+{% endblock %}

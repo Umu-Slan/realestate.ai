@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Real Estate AI Assistant | مساعدك العقاري</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --user-bubble: #0d9488; --assistant-bubble: #f8fafc; --accent: #0f766e; --bubble-shadow: 0 1px 2px rgba(0,0,0,.06); }
+    body { font-family: 'Tajawal', 'Segoe UI', sans-serif; }
+    .msg-user { border-radius: 1.25rem 1.25rem 0.25rem 1.25rem; box-shadow: var(--bubble-shadow); }
+    .msg-assistant { border-radius: 1.25rem 1.25rem 1.25rem 0.25rem; box-shadow: var(--bubble-shadow); border: 1px solid #e2e8f0; }
+    .badge-hot { background: #dc2626; color: white; }
+    .badge-warm { background: #f59e0b; color: white; }
+    .badge-cold { background: #64748b; color: white; }
+    .badge-ai { background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; font-size: 0.65rem; padding: 0.2rem 0.5rem; }
+    .confidence-high { color: #16a34a; }
+    .confidence-medium { color: #d97706; }
+    .confidence-low { color: #94a3b8; }
+    .typing-dot { animation: pulse 1.2s ease-in-out infinite both; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes pulse { 0%, 80%, 100% { opacity: 0.4; } 40% { opacity: 1; } }
+    .rec-card { border: 1px solid #e2e8f0; border-radius: 0.75rem; transition: box-shadow 0.2s; }
+    .rec-card:hover { box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15); }
+    .cta-btn { background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color: white; border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.875rem; }
+    .cta-btn:hover { opacity: 0.95; }
+    @media (max-width: 640px) { .chat-area { min-height: 60vh; } }
+    [dir="ltr"] .msg-user { border-radius: 1.25rem 1.25rem 1.25rem 0.25rem; }
+    [dir="ltr"] .msg-assistant { border-radius: 1.25rem 0.25rem 1.25rem 1.25rem; }
+    [dir="rtl"] .rec-card { text-align: right; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+  <div class="max-w-2xl mx-auto flex flex-col h-screen md:h-[90vh] md:max-h-[800px] md:mt-6 md:rounded-2xl md:shadow-xl md:overflow-hidden bg-white">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-teal-700 to-teal-800 text-white px-4 py-3 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-teal-500/30 flex items-center justify-center text-xl">🏠</div>
+        <div>
+          <h1 class="font-bold text-lg">Real Estate AI Assistant</h1>
+          <p class="text-xs text-teal-200">Powered by Conversation Engine</p>
+        </div>
+      </div>
+      <div id="lead-badge" class="px-3 py-1 rounded-full text-xs font-medium text-white badge-warm">Warm</div>
+    </header>
+
+    <!-- Quick actions -->
+    <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-2 shrink-0">
+      <button type="button" data-msg="ميزانيتي 3 مليون" data-mode="sales" data-sales-mode="warm_lead" class="quick-btn px-3 py-1.5 text-sm rounded-full bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 transition">
+        My budget 3M
+      </button>
+      <button type="button" data-msg="في الشيخ زايد" data-mode="sales" data-sales-mode="warm_lead" class="quick-btn px-3 py-1.5 text-sm rounded-full bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 transition">
+        In Sheikh Zayed
+      </button>
+      <button type="button" data-msg="عايز أشتري شقة" data-mode="sales" data-sales-mode="hot_lead" class="quick-btn px-3 py-1.5 text-sm rounded-full bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 transition">
+        Buy apartment
+      </button>
+      <button type="button" data-msg="أنا مهتم بالاستثمار العقاري" data-mode="sales" data-sales-mode="warm_lead" class="quick-btn px-3 py-1.5 text-sm rounded-full bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 transition">
+        Investment
+      </button>
+      <button type="button" data-msg="استفسار عن موعد التسليم" data-mode="support" class="quick-btn px-3 py-1.5 text-sm rounded-full bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 transition">
+        Ask about delivery
+      </button>
+      <button type="button" data-msg="أريد التحدث مع موظف" data-mode="support" class="quick-btn px-3 py-1.5 text-sm rounded-full bg-white border border-slate-200 hover:bg-teal-50 hover:border-teal-300 transition">
+        Talk to agent
+      </button>
+      <button type="button" id="suggested-projects-btn" class="px-3 py-1.5 text-sm rounded-full bg-teal-100 border border-teal-300 text-teal-800 hover:bg-teal-200 transition font-medium">
+        Suggested projects
+      </button>
+    </div>
+
+    <!-- Chat area -->
+    <div id="chat" class="chat-area flex-1 overflow-y-auto p-4 space-y-4 min-h-[200px]">
+      <div id="welcome-msg" class="msg-assistant flex gap-3 max-w-[85%] md:max-w-[80%]">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shrink-0 text-white text-lg font-bold shadow-sm">AI</div>
+        <div class="bg-white text-slate-800 px-4 py-3 msg-assistant flex-1">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="badge-ai rounded-full font-medium">AI Sales Assistant</span>
+          </div>
+          <p class="whitespace-pre-wrap">مرحباً! أنا مساعدك العقاري. كيف يمكنني مساعدتك اليوم؟</p>
+          <p class="mt-1 text-sm text-slate-500">Hello! I'm your real estate assistant. How can I help you today?</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Project detail modal (opens on View details click) -->
+    <div id="project-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/40">
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 max-h-[85vh] overflow-hidden flex flex-col" onclick="event.stopPropagation()">
+        <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between shrink-0">
+          <h3 class="font-semibold text-slate-800">تفاصيل المشروع · Project details</h3>
+          <button type="button" id="project-modal-close" class="text-slate-400 hover:text-slate-600 text-xl leading-none">&times;</button>
+        </div>
+        <div id="project-modal-body" class="flex-1 overflow-y-auto p-4 text-sm text-slate-700"></div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="p-4 border-t border-slate-200 bg-white shrink-0">
+      <div class="flex gap-2">
+        <input type="text" id="input" placeholder="اكتب رسالتك... | Type your message"
+          class="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
+          autocomplete="off">
+        <button type="button" id="send" class="px-5 py-2.5 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition font-medium disabled:opacity-60 disabled:cursor-not-allowed">
+          <span id="send-label">إرسال</span>
+        </button>
+      </div>
+      <div class="flex justify-between items-center mt-2 flex-wrap gap-1">
+        <button type="button" id="agent-cta" class="text-xs text-teal-600 hover:text-teal-800 hover:underline">
+          تحدث مع موظف · Talk to agent
+        </button>
+        <select id="mode" class="text-xs text-slate-400 border-0 bg-transparent cursor-pointer focus:ring-0 py-0" title="Lead mode">
+          <option value="hot_lead">Hot</option>
+          <option value="warm_lead" selected>Warm</option>
+          <option value="cold_lead">Cold</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Operator / debug panel (internal visibility; not shown in customer message body) -->
+    <div id="pipeline-debug" class="hidden border-t border-slate-200 bg-slate-900 text-slate-200 text-xs px-4 py-3 max-h-40 overflow-y-auto">
+      <div class="font-semibold mb-2 text-teal-300">Multi-Agent Pipeline · Operator View</div>
+      <div id="pipeline-debug-content" class="space-y-0.5 font-mono whitespace-pre-wrap"></div>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const modeSelect = document.getElementById('mode');
+    const leadBadge = document.getElementById('lead-badge');
+    const projectModal = document.getElementById('project-modal');
+    const projectModalBody = document.getElementById('project-modal-body');
+    const projectModalClose = document.getElementById('project-modal-close');
+
+    const FETCH_OPTS = { credentials: 'include' };
+    let pipelineState = null;
+
+    async function fetchWithRetry(url, opts, maxRetries = 3) {
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          const res = await fetch(url, { ...opts, ...FETCH_OPTS });
+          if (res.status === 429) {
+            const delay = Math.min(2000 * Math.pow(2, i), 8000);
+            await new Promise(r => setTimeout(r, delay));
+            continue;
+          }
+          return res;
+        } catch (e) {
+          if (i === maxRetries - 1) throw e;
+          await new Promise(r => setTimeout(r, 500 * Math.pow(2, i)));
+        }
+      }
+      return fetch(url, { ...opts, ...FETCH_OPTS });
+    }
+
+    function isArabic(text) {
+      return /[\u0600-\u06FF]/.test(text || '');
+    }
+
+    function addMsg(content, isUser, opts) {
+      opts = opts || {};
+      const skipScroll = opts.skipScroll || false;
+      const temperature = opts.temperature;
+      const nextStep = opts.next_step;
+      const matches = opts.matches || [];
+      removeLoading();
+      const msgWrap = document.createElement('div');
+      msgWrap.className = 'space-y-2 max-w-[95%]';
+      const div = document.createElement('div');
+      div.className = 'flex gap-3 max-w-[85%] md:max-w-[80%] ' + (isUser ? 'ml-auto flex-row-reverse' : '');
+      const avatar = document.createElement('div');
+      avatar.className = 'w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-base font-bold';
+      if (isUser) {
+        avatar.textContent = '👤';
+        avatar.style.background = '#e0f2fe';
+      } else {
+        avatar.textContent = 'AI';
+        avatar.className += ' bg-gradient-to-br from-teal-500 to-teal-600 text-white shadow-sm';
+      }
+      const bubble = document.createElement('div');
+      bubble.className = (isUser ? 'text-white msg-user' : 'bg-white text-slate-800 msg-assistant') + ' px-4 py-3 flex-1';
+      if (isUser) bubble.style.background = 'var(--user-bubble)';
+      let inner = '';
+      if (!isUser) {
+        inner += '<div class="flex items-center gap-2 mb-1.5 flex-wrap">';
+        inner += '<span class="badge-ai rounded-full font-medium">AI Sales Assistant</span>';
+        inner += '</div>';
+      }
+      inner += '<p class="whitespace-pre-wrap">' + escapeHtml(content) + '</p>';
+      if (!isUser && nextStep && nextStep.label) {
+        inner += '<div class="mt-3">';
+        inner += '<button type="button" class="cta-btn next-step-cta" data-action="' + escapeHtml(nextStep.action || '') + '">';
+        inner += escapeHtml(nextStep.label) + '</button>';
+        inner += '</div>';
+      }
+      bubble.innerHTML = inner;
+      div.appendChild(avatar);
+      div.appendChild(bubble);
+      msgWrap.appendChild(div);
+
+      if (!isUser && matches && matches.length > 0 && (opts.recommendation_ready !== false)) {
+        const recBlock = renderRecommendationCards(matches);
+        msgWrap.appendChild(recBlock);
+      }
+      chat.appendChild(msgWrap);
+      if (!skipScroll) chat.scrollTop = chat.scrollHeight;
+
+      if (!isUser && nextStep && bubble.querySelector('.next-step-cta')) {
+        bubble.querySelector('.next-step-cta').onclick = () => {
+          const btn = bubble.querySelector('.next-step-cta');
+          const action = btn && btn.dataset.action ? btn.dataset.action : '';
+          if (action) { input.value = action; input.focus(); }
+        };
+      }
+      if (isUser === false && temperature) {
+        updateLeadBadge(temperature);
+      }
+    }
+
+    function renderRecommendationCards(matches) {
+      const block = document.createElement('div');
+      block.className = 'mt-2 ps-12 flex flex-col gap-2 recommendation-block';
+      block.setAttribute('data-recommendation-for', 'assistant');
+      const title = document.createElement('p');
+      title.className = 'text-xs font-medium text-slate-600';
+      title.textContent = 'مشاريع مقترحة · Suggested projects';
+      block.appendChild(title);
+      const cardsWrap = document.createElement('div');
+      cardsWrap.className = 'space-y-3';
+      matches.forEach((m) => {
+        const card = document.createElement('div');
+        const pid = m.project_id != null ? m.project_id : m.id;
+        const price = m.price_min != null ? formatPrice(m.price_min) : '—';
+        const years = m.years_installment != null ? m.years_installment + ' سنة تقسيط' : '—';
+        const score = m.score != null ? Math.round(Number(m.score) * 100) : (m.fit_score != null || m.confidence != null) ? Math.round((Number(m.fit_score ?? m.confidence) || 0) * 100) : null;
+        card.className = 'rec-card p-4 bg-white rounded-xl text-sm border border-slate-200 transition';
+        card.innerHTML = `
+          <div class="flex justify-between items-start gap-2">
+            <div class="font-semibold text-slate-800">${escapeHtml(m.project_name || 'Project')}</div>
+            ${score != null ? '<span class="badge-ai shrink-0">' + score + '% match</span>' : ''}
+          </div>
+          <div class="text-slate-600 mt-1">${escapeHtml(m.location || '—')}</div>
+          <div class="flex gap-4 mt-2 text-slate-500 text-xs">
+            <span>من ${price}</span>
+            <span>${years}</span>
+          </div>
+          <button type="button" class="view-details-btn mt-2 cta-btn text-xs py-1.5 px-2" data-project-id="${escapeHtml(String(pid || ''))}">عرض التفاصيل · View details</button>
+        `;
+        const btn = card.querySelector('.view-details-btn');
+        if (btn && pid) {
+          btn.onclick = () => openProjectModal(pid);
+        }
+        cardsWrap.appendChild(card);
+      });
+      block.appendChild(cardsWrap);
+      return block;
+    }
+
+    function openProjectModal(projectId) {
+      if (!projectId) return;
+      projectModalBody.textContent = 'جاري التحميل...';
+      projectModal.classList.remove('hidden');
+      fetch('/api/engines/project/' + projectId + '/', { method: 'GET', ...FETCH_OPTS })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.error) {
+            projectModalBody.innerHTML = '<p class="text-red-600">' + escapeHtml(data.error) + '</p>';
+            return;
+          }
+          const name = data.name_ar || data.name || 'Project';
+          const loc = data.location || '—';
+          const priceMin = data.price_min != null ? formatPrice(data.price_min) : '—';
+          const priceMax = data.price_max != null ? formatPrice(data.price_max) : '—';
+          let html = '<div class="space-y-3">';
+          html += '<p><strong>' + escapeHtml(name) + '</strong></p>';
+          html += '<p><span class="text-slate-500">الموقع:</span> ' + escapeHtml(loc) + '</p>';
+          html += '<p><span class="text-slate-500">السعر:</span> من ' + priceMin;
+          if (priceMax !== '—') html += ' إلى ' + priceMax;
+          html += '</p>';
+          if (data.availability_status) {
+            html += '<p><span class="text-slate-500">الحالة:</span> ' + escapeHtml(data.availability_status) + '</p>';
+          }
+          if (data.payment_plan && (data.payment_plan.down_payment_pct_min || data.payment_plan.installment_years_min)) {
+            const pp = data.payment_plan;
+            html += '<p class="text-slate-600"><span class="text-slate-500">التقسيط:</span>';
+            if (pp.down_payment_pct_min) html += ' دفعة مقدمة ' + pp.down_payment_pct_min + '%';
+            if (pp.installment_years_min) html += ' · حتى ' + pp.installment_years_min + ' سنوات';
+            html += '</p>';
+          }
+          if (data.delivery && data.delivery.phase_name) {
+            html += '<p><span class="text-slate-500">التسليم:</span> ' + escapeHtml(data.delivery.phase_name) + '</p>';
+          }
+          html += '</div>';
+          projectModalBody.innerHTML = html;
+        })
+        .catch(() => {
+          projectModalBody.innerHTML = '<p class="text-red-600">فشل التحميل. حاول مرة أخرى.</p>';
+        });
+    }
+
+    function closeProjectModal() {
+      projectModal.classList.add('hidden');
+    }
+    projectModal.onclick = closeProjectModal;
+    projectModalClose.onclick = closeProjectModal;
+
+    function restoreHistory(messages) {
+      if (!messages || messages.length === 0) return;
+      const welcome = document.getElementById('welcome-msg');
+      if (welcome) welcome.remove();
+      messages.forEach(m => {
+        const isUser = m.role === 'user';
+        addMsg(m.content, isUser, {
+          skipScroll: true,
+          temperature: m.temperature,
+          next_step: m.next_step,
+          matches: isUser ? [] : (m.matches || []),
+          recommendation_ready: isUser ? false : (m.recommendation_ready !== false && (m.matches || []).length > 0),
+        });
+      });
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function loadConversationHistory() {
+      try {
+        const res = await fetchWithRetry('/api/engines/conversation/', { method: 'GET' });
+        const data = await res.json().catch(() => ({}));
+        if (data.messages && data.messages.length > 0) {
+          restoreHistory(data.messages);
+        }
+      } catch (e) {
+        console.warn('Could not load conversation history:', e);
+      }
+    }
+
+    function addLoading() {
+      removeLoading();
+      const div = document.createElement('div');
+      div.id = 'loading-msg';
+      div.className = 'flex gap-3 max-w-[85%] md:max-w-[80%]';
+      div.innerHTML = `
+        <div class="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-white font-bold bg-gradient-to-br from-teal-500 to-teal-600 shadow-sm">AI</div>
+        <div class="bg-white text-slate-500 px-4 py-3 msg-assistant flex gap-1 items-center border border-slate-200">
+          <span class="typing-dot w-2 h-2 rounded-full bg-slate-400"></span>
+          <span class="typing-dot w-2 h-2 rounded-full bg-slate-400"></span>
+          <span class="typing-dot w-2 h-2 rounded-full bg-slate-400"></span>
+        </div>
+      `;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function removeLoading() {
+      document.getElementById('loading-msg')?.remove();
+    }
+
+    function addError(content, onRetry) {
+      removeLoading();
+      const div = document.createElement('div');
+      div.className = 'flex gap-3 max-w-[85%] md:max-w-[80%]';
+      div.innerHTML = `
+        <div class="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-base bg-red-100">⚠</div>
+        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 msg-assistant rounded-xl">
+          <p class="whitespace-pre-wrap">${escapeHtml(content)}</p>
+          ${onRetry ? '<button type="button" class="retry-btn mt-2 text-xs px-2 py-1 bg-red-100 hover:bg-red-200 rounded">إعادة المحاولة · Retry</button>' : ''}
+        </div>
+      `;
+      if (onRetry) {
+        div.querySelector('.retry-btn').onclick = onRetry;
+      }
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function updateLeadBadge(temp) {
+      if (!temp) return;
+      const t = String(temp).toLowerCase();
+      leadBadge.classList.remove('badge-hot', 'badge-warm', 'badge-cold');
+      if (t === 'hot') {
+        leadBadge.textContent = 'Hot';
+        leadBadge.className = 'px-3 py-1 rounded-full text-xs font-medium text-white badge-hot';
+      } else if (t === 'warm') {
+        leadBadge.textContent = 'Warm';
+        leadBadge.className = 'px-3 py-1 rounded-full text-xs font-medium text-white badge-warm';
+      } else {
+        leadBadge.textContent = 'Cold';
+        leadBadge.className = 'px-3 py-1 rounded-full text-xs font-medium text-white badge-cold';
+      }
+    }
+
+    function updateOperatorPanel(pipeline) {
+      const panel = document.getElementById('pipeline-debug');
+      const content = document.getElementById('pipeline-debug-content');
+      if (!panel || !content) return;
+      if (!pipeline) {
+        panel.classList.add('hidden');
+        return;
+      }
+      const parts = [
+        'Intent: ' + (pipeline.intent || '—'),
+        'Entities: ' + (pipeline.entities ? JSON.stringify(pipeline.entities) : '—'),
+        'Memory: ' + (pipeline.memory_summary || '—'),
+        'Lead score: ' + (pipeline.lead_score ?? '—'),
+        'Lead temperature: ' + (pipeline.lead_temperature || '—'),
+        'Buyer stage: ' + (pipeline.buyer_stage || '—'),
+        'Recommendation ready: ' + (pipeline.recommendation_ready === true ? 'Yes' : 'No' + (pipeline.recommendation_block_reason ? ' (' + pipeline.recommendation_block_reason + ')' : '')),
+        'Agents: ' + (pipeline.agents_executed || pipeline.agents || '—'),
+      ];
+      if (Array.isArray(pipeline.agent_logs) && pipeline.agent_logs.length) {
+        parts.push('');
+        pipeline.agent_logs.forEach(function(l) { parts.push(l); });
+      }
+      content.textContent = parts.join('\n');
+      panel.classList.remove('hidden');
+    }
+
+    function formatPrice(n) {
+      if (n == null) return '—';
+      const v = Number(n);
+      if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M EGP';
+      return v.toLocaleString() + ' EGP';
+    }
+
+    async function sendMessage(msg, mode, salesMode, isSupport) {
+      if (!msg || !msg.trim()) return;
+      addMsg(msg.trim(), true);
+      input.value = '';
+      const endpoint = isSupport ? '/api/engines/support/' : '/api/engines/sales/';
+      const body = isSupport
+        ? { message: msg, is_angry: false }
+        : { message: msg, mode: salesMode || modeSelect.value, state: pipelineState, use_pipeline: true };
+
+      sendBtn.disabled = true;
+      addLoading();
+      try {
+        const res = await fetchWithRetry(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 429) {
+          addError('الكثير من الطلبات. انتظر قليلاً.\nToo many requests. Please wait.', () => {
+            sendMessage(msg.trim(), mode, salesMode, isSupport);
+          });
+          return;
+        }
+        const reply = data.response || data.error || 'Something went wrong.';
+        const temp = isSupport ? null : (data.temperature || (salesMode || modeSelect.value).replace('_lead', ''));
+        const conf = data.confidence;
+        const confNorm = typeof conf === 'number' ? (conf >= 0.7 ? 'high' : conf >= 0.4 ? 'medium' : 'low') : (conf || '');
+        const ns = data.next_step;
+        // Never show internal labels (e.g. "ask_budget: Budget not specified")
+        let nextStepNorm = null;
+        if (ns && typeof ns === 'object' && ns.label) {
+          nextStepNorm = ns;
+        } else if (typeof ns === 'string' && ns && ns.length < 60 && !ns.includes(': ')) {
+          nextStepNorm = { label: ns, action: ns };
+        }
+        if (data.state) pipelineState = data.state;
+        if (data.pipeline) updateOperatorPanel(data.pipeline);
+        const recReady = data.recommendation_ready === true;
+        const matchesToShow = recReady ? (data.matches || []) : [];
+        addMsg(reply, false, { temperature: temp, next_step: nextStepNorm, matches: matchesToShow, recommendation_ready: recReady });
+      } catch (e) {
+        addError('اتصال الشبكة فشل. حاول مرة أخرى.\nNetwork error. Please try again.', () => {
+          sendMessage(msg.trim(), mode, salesMode, isSupport);
+        });
+      }
+      sendBtn.disabled = false;
+    }
+
+    function requestProjectRecommendations() {
+      sendMessage('عرض المشاريع المناسبة', modeSelect.value, null, false);
+    }
+
+    document.getElementById('agent-cta').onclick = () => sendMessage('أريد التحدث مع موظف', null, null, true);
+    modeSelect.onchange = () => updateLeadBadge(modeSelect.value.replace('_lead', ''));
+    sendBtn.onclick = () => sendMessage(input.value, modeSelect.value, null, false);
+    input.onkeydown = (e) => { if (e.key === 'Enter') sendMessage(input.value, modeSelect.value, null, false); };
+
+    loadConversationHistory();
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') loadConversationHistory();
+    });
+
+    document.querySelectorAll('.quick-btn').forEach(btn => {
+      btn.onclick = () => {
+        const msg = btn.dataset.msg;
+        const mode = btn.dataset.mode;
+        const salesMode = btn.dataset.salesMode || null;
+        if (mode === 'support') {
+          sendMessage(msg, null, null, true);
+        } else {
+          sendMessage(msg, modeSelect.value, salesMode, false);
+        }
+      };
+    });
+
+    document.getElementById('suggested-projects-btn').onclick = requestProjectRecommendations;
+  </script>
+</body>
+</html>

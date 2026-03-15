@@ -1,0 +1,25 @@
+{% extends "console/base.html" %}
+{% block title %}Company Configuration{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-800 mb-6">Company Configuration</h1>
+{% if company %}
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-2xl">
+  <dl class="grid grid-cols-1 gap-3 text-sm">
+    <div><dt class="text-slate-500 font-medium">Name</dt><dd class="mt-0.5">{{ company.name }}</dd></div>
+    <div><dt class="text-slate-500 font-medium">Slug</dt><dd class="mt-0.5">{{ company.slug|default:"—" }}</dd></div>
+    <div><dt class="text-slate-500 font-medium">Support Email</dt><dd class="mt-0.5">{{ company.support_email|default:"—" }}</dd></div>
+    <div><dt class="text-slate-500 font-medium">Support Phone</dt><dd class="mt-0.5">{{ company.support_phone|default:"—" }}</dd></div>
+    <div><dt class="text-slate-500 font-medium">Website</dt><dd class="mt-0.5">{% if company.website_url %}<a href="{{ company.website_url }}" class="text-teal-600 hover:underline">{{ company.website_url }}</a>{% else %}—{% endif %}</dd></div>
+    <div><dt class="text-slate-500 font-medium">Primary Color</dt><dd class="mt-0.5">{% if company.primary_color %}<span class="inline-block w-6 h-4 rounded border" style="background-color: {{ company.primary_color }}"></span> {{ company.primary_color }}{% else %}—{% endif %}</dd></div>
+    <div><dt class="text-slate-500 font-medium">Knowledge Namespace</dt><dd class="mt-0.5">{{ company.knowledge_namespace|default:"(default)" }}</dd></div>
+    <div><dt class="text-slate-500 font-medium">Tone Settings</dt><dd class="mt-0.5"><code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">{{ company.tone_settings|default:"{}" }}</code></dd></div>
+    <div><dt class="text-slate-500 font-medium">Default Channel Settings</dt><dd class="mt-0.5"><code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">{{ company.default_channel_settings|default:"{}" }}</code></dd></div>
+  </dl>
+  <p class="mt-4 text-xs text-slate-500">Edit in <a href="/admin/companies/company/" class="text-teal-600 hover:underline">Django Admin</a></p>
+</div>
+{% else %}
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 max-w-2xl">
+  <p class="text-slate-500 text-sm">No company configured yet. Run migrations or create a company in <a href="/admin/companies/company/" class="text-teal-600 hover:underline">Django Admin</a>.</p>
+</div>
+{% endif %}
+{% endblock %}

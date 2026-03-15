@@ -1,0 +1,122 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% blocktrans with id=conversation.id %}Conversation {{ id }}{% endblocktrans %}{% endblock %}
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-4 h-[calc(100vh-8rem)] min-h-[400px]" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}">
+  <!-- Conversation list (RTL: right side) -->
+  <div class="lg:w-80 shrink-0 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="p-4 border-b border-slate-200 bg-slate-50/50">
+      <h2 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+        <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0-4.418-4.03-8-9-8a9.863 9.863 0 00-4.255.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        {% trans "Conversations" %}
+      </h2>
+      <form method="get" action="{% url 'console:conversation_detail' conversation.id %}" class="relative">
+        <input type="search" name="q" value="{{ search_q|default:'' }}" placeholder="{% trans 'Search conversations...' %}" class="w-full ps-9 pe-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-white">
+        <svg class="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </form>
+    </div>
+    <div class="flex-1 overflow-y-auto">
+      {% for c in conversations %}
+      <a href="{% url 'console:conversation_detail' c.id %}" class="block p-4 border-b border-slate-100 hover:bg-teal-50/50 transition {% if c.id == conversation.id %}bg-teal-50 border-s-4 border-teal-600 shadow-sm{% endif %}">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-medium text-slate-800 truncate">{% if c.customer.identity %}{{ c.customer.identity.name|default:c.customer.identity.external_id|default:"—" }}{% else %}Conv #{{ c.id }}{% endif %}</span>
+          <span class="text-xs text-slate-500 shrink-0">{{ c.created_at|date:"M d" }}</span>
+        </div>
+        <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+          <span class="px-2 py-0.5 rounded-lg text-xs bg-slate-100 text-slate-600">{{ c.channel }}</span>
+          <span class="text-xs text-slate-500">{{ c.message_count }} {% trans "msg" %}</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Center: chat thread -->
+  <div class="flex-1 flex flex-col min-w-0 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div class="p-4 border-b border-slate-200 bg-gradient-to-r from-white to-slate-50/50">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-3">
+          <a href="{% url 'console:conversations' %}" class="text-slate-500 hover:text-teal-600 p-2 rounded-lg hover:bg-teal-50 transition" title="{% trans 'Back to conversations' %}">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </a>
+          <span class="font-semibold text-slate-800">{% if conversation.customer.identity %}{{ conversation.customer.identity.name|default:conversation.customer.identity.external_id|default:"—" }}{% else %}Conversation #{{ conversation.id }}{% endif %}</span>
+          <span class="px-2.5 py-0.5 rounded-lg text-xs bg-teal-50 text-teal-700 font-medium">{{ conversation.channel }}</span>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap border-s border-slate-200 ps-3">
+          <a href="{% url 'console:customer_detail' conversation.customer.id %}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-teal-50 hover:bg-teal-100 rounded-lg font-medium text-teal-700 transition">{% trans "View profile" %}</a>
+          <a href="{% url 'console:escalations' %}" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg font-medium text-slate-700 transition">{% trans "Escalations" %}</a>
+          <a href="{% url 'console:support_cases' %}" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg font-medium text-slate-700 transition">{% trans "Support" %}</a>
+          <a href="{% url 'console:audit' %}?subject_type=conversation&amp;subject_id={{ conversation.id }}" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg font-medium text-slate-700 transition">{% trans "Audit trail" %}</a>
+        </div>
+      </div>
+    </div>
+    <div class="flex-1 overflow-y-auto p-5 space-y-5 bg-slate-50/30">
+      {% for msg, snap, feedback in message_snapshots %}
+      <div class="flex {% if msg.role == 'user' %}justify-end{% else %}justify-start{% endif %}">
+        <div class="max-w-[85%] p-4 rounded-2xl leading-relaxed shadow-sm transition-shadow hover:shadow-md {% if msg.role == 'user' %}bg-teal-600 text-white msg-user{% else %}bg-white border border-slate-200 msg-assistant{% endif %}">
+          <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+            {% if msg.role == 'assistant' %}<span class="badge-ai font-medium">{% trans "AI Sales" %}</span>{% endif %}
+            <span class="text-xs {% if msg.role == 'user' %}text-teal-100{% else %}text-slate-500{% endif %}">{{ msg.created_at|date:"H:i" }}</span>
+          </div>
+          <div class="whitespace-pre-wrap {% if msg.role == 'user' %}text-white{% else %}text-slate-800{% endif %}">{{ msg.content }}</div>
+          {% if snap %}
+          <details class="mt-3 group">
+            <summary class="text-xs font-medium text-slate-500 cursor-pointer hover:text-teal-600">{% trans "AI reasoning preview" %}</summary>
+            <div class="mt-2 text-xs border-t border-slate-200 pt-2 space-y-1 text-slate-600">
+              <div><strong>{% trans "Intent" %}:</strong> {{ snap.intent.primary|default:msg.intent|default:"—" }}</div>
+              {% if snap.scoring %}<div><strong>{% trans "Score" %}:</strong> {{ snap.scoring.score|default:"—" }} <span class="badge-{% if snap.scoring.temperature == 'hot' %}hot{% elif snap.scoring.temperature == 'warm' %}warm{% else %}cold{% endif %} px-1.5 py-0.5 rounded text-xs">{{ snap.scoring.temperature|default:"" }}</span></div>{% endif %}
+            </div>
+          </details>
+          {% endif %}
+          {% if msg.role == 'assistant' and can_submit_correction %}
+          <div class="mt-2" id="feedback-{{ msg.id }}">
+            {% if feedback %}
+            <span class="text-xs px-2 py-1 rounded {% if feedback.quality == 'good' or feedback.is_good %}bg-green-100 text-green-800{% elif feedback.quality == 'weak' %}bg-amber-100 text-amber-800{% else %}bg-red-100 text-red-800{% endif %}">
+              {% if feedback.quality == 'good' or feedback.is_good %}✓ {% trans "Good" %}{% elif feedback.quality == 'weak' %}{% trans "Weak" %}{% else %}{% trans "Wrong" %}{% endif %}
+            </span>
+            {% else %}
+            <div class="flex flex-wrap gap-1">
+              <form action="{% url 'console:submit_feedback' %}" method="post" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="message_id" value="{{ msg.id }}">
+                <input type="hidden" name="quality" value="good">
+                <button type="submit" class="text-xs px-2 py-1 bg-green-100 rounded hover:bg-green-200">{% trans "Good" %}</button>
+              </form>
+              <button type="button" class="text-xs px-2 py-1 bg-amber-100 rounded hover:bg-amber-200" onclick="document.getElementById('correction-form-{{ msg.id }}').classList.toggle('hidden')">{% trans "Weak" %}</button>
+              <button type="button" class="text-xs px-2 py-1 bg-red-100 rounded hover:bg-red-200" onclick="document.getElementById('correction-form-{{ msg.id }}').classList.toggle('hidden')">{% trans "Wrong" %}</button>
+            </div>
+            <div id="correction-form-{{ msg.id }}" class="hidden mt-3 p-3 bg-slate-50 rounded-lg border border-slate-200 text-sm">
+              <form action="{% url 'console:submit_feedback' %}" method="post" class="space-y-2">
+                {% csrf_token %}
+                <input type="hidden" name="message_id" value="{{ msg.id }}">
+                <label class="block text-xs font-medium text-slate-600">{% trans "Better version" %}</label>
+                <textarea name="corrected_response" rows="2" class="w-full text-sm border border-slate-200 rounded px-2 py-1.5" placeholder="{% trans 'Write improved response...' %}"></textarea>
+                <label class="block text-xs font-medium text-slate-600">{% trans "Issue type" %}</label>
+                <select name="issue_type" class="w-full text-sm border border-slate-200 rounded px-2 py-1">
+                  <option value="">—</option>
+                  {% for value, label in issue_type_choices %}
+                  <option value="{{ value }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+                <input type="hidden" name="reason" value="">
+                <div class="flex gap-2 pt-1">
+                  <button type="submit" name="quality" value="weak" class="text-xs px-2 py-1 bg-amber-200 rounded">{% trans "Mark Weak" %}</button>
+                  <button type="submit" name="quality" value="wrong" class="text-xs px-2 py-1 bg-red-200 rounded">{% trans "Mark Wrong + Submit" %}</button>
+                </div>
+              </form>
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-slate-500 text-sm py-8 text-center">{% trans "No messages yet" %}</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Right: Operator Assist panel -->
+  {% include "console/includes/operator_assist_panel.html" with operator_assist=operator_assist %}
+</div>
+{% endblock %}

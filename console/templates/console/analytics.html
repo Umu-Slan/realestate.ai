@@ -1,0 +1,117 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Analytics" %}{% endblock %}
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <h1 class="text-2xl font-bold text-slate-800">{% trans "Analytics" %}</h1>
+  <form method="get">
+    <select name="days" onchange="this.form.submit()" class="px-3 py-2 border border-slate-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-teal-500">
+      <option value="7"  {% if days == 7 %}selected{% endif %}>{% trans "7 days" %}</option>
+      <option value="30" {% if days == 30 %}selected{% endif %}>{% trans "30 days" %}</option>
+      <option value="90" {% if days == 90 %}selected{% endif %}>{% trans "90 days" %}</option>
+    </select>
+  </form>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <div class="bg-white p-6 rounded-xl border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">{% trans "Leads by Source" %}</h2>
+    {% if avg_score_by_source %}
+    <div class="h-64"><canvas id="chart-leads-source"></canvas></div>
+    {% else %}
+    <p class="text-slate-500 text-sm py-8">{% trans "No score-by-source data for this period." %}</p>
+    {% endif %}
+  </div>
+  <div class="bg-white p-6 rounded-xl border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">{% trans "Top Intents" %}</h2>
+    {% if top_intents %}
+    <div class="h-64"><canvas id="chart-intents"></canvas></div>
+    {% else %}
+    <p class="text-slate-500 text-sm py-8">{% trans "No intent data for this period." %}</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <div class="bg-white p-6 rounded-xl border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">{% trans "Support Categories" %}</h2>
+    {% if top_support_categories %}
+    <div class="h-64"><canvas id="chart-support"></canvas></div>
+    {% else %}
+    <p class="text-slate-500 text-sm py-8">{% trans "No support category data for this period." %}</p>
+    {% endif %}
+  </div>
+  <div class="bg-white p-6 rounded-xl border border-slate-200">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">{% trans "Escalation Reasons" %}</h2>
+    {% if escalation_reasons %}
+    <div class="h-64"><canvas id="chart-escalations"></canvas></div>
+    {% else %}
+    <p class="text-slate-500 text-sm py-8">{% trans "No escalation data for this period." %}</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="bg-white p-6 rounded-xl border border-slate-200">
+  <h2 class="text-lg font-semibold text-slate-800 mb-4">{% trans "Average Lead Score by Source" %}</h2>
+  {% if avg_score_by_source %}
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead><tr class="border-b"><th class="text-left py-2">{% trans "Source" %}</th><th class="text-right">{% trans "Avg Score" %}</th><th class="text-right">{% trans "Count" %}</th></tr></thead>
+      <tbody>
+        {% for row in avg_score_by_source %}
+        <tr class="border-b border-slate-100"><td class="py-2">{{ row.source }}</td><td class="text-right">{{ row.avg_score }}</td><td class="text-right">{{ row.count }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-slate-500 text-sm">{% trans "No score-by-source data for this period." %}</p>
+  {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var colors = ['#14b8a6','#3b82f6','#f59e0b','#8b5cf6','#ec4899','#64748b'];
+  {% if avg_score_by_source %}
+  new Chart(document.getElementById('chart-leads-source'), {
+    type: 'bar',
+    data: {
+      labels: [{% for r in avg_score_by_source %}"{{ r.source|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+      datasets: [{ label: '{% trans "Avg Score" %}', data: [{% for r in avg_score_by_source %}{{ r.avg_score }}{% if not forloop.last %}, {% endif %}{% endfor %}], backgroundColor: colors }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+  });
+  {% endif %}
+  {% if top_intents %}
+  new Chart(document.getElementById('chart-intents'), {
+    type: 'doughnut',
+    data: {
+      labels: [{% for r in top_intents %}"{{ r.intent|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+      datasets: [{ data: [{% for r in top_intents %}{{ r.count }}{% if not forloop.last %}, {% endif %}{% endfor %}], backgroundColor: colors }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+  });
+  {% endif %}
+  {% if top_support_categories %}
+  new Chart(document.getElementById('chart-support'), {
+    type: 'bar',
+    data: {
+      labels: [{% for r in top_support_categories %}"{{ r.category|default:"uncategorized"|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+      datasets: [{ label: '{% trans "Count" %}', data: [{% for r in top_support_categories %}{{ r.count }}{% if not forloop.last %}, {% endif %}{% endfor %}], backgroundColor: colors }]
+    },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false }
+  });
+  {% endif %}
+  {% if escalation_reasons %}
+  new Chart(document.getElementById('chart-escalations'), {
+    type: 'doughnut',
+    data: {
+      labels: [{% for r in escalation_reasons %}"{{ r.reason|default:"unspecified"|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+      datasets: [{ data: [{% for r in escalation_reasons %}{{ r.count }}{% if not forloop.last %}, {% endif %}{% endfor %}], backgroundColor: colors }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+  });
+  {% endif %}
+});
+</script>
+{% endblock %}

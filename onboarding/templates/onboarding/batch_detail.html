@@ -1,0 +1,76 @@
+{% extends "console/base.html" %}
+{% block title %}Batch {{ batch.id }}{% endblock %}
+{% block content %}
+<nav class="mb-6">
+  <a href="{% url 'onboarding:dashboard' %}" class="text-sm text-teal-600 hover:underline">← Back to Onboarding</a>
+</nav>
+
+<h1 class="text-2xl font-bold text-slate-800 mb-6">Batch #{{ batch.id }}</h1>
+
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+    <div class="text-2xl font-bold text-green-600">{{ batch.imported_count }}</div>
+    <div class="text-sm text-slate-600">Imported</div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+    <div class="text-2xl font-bold text-amber-600">{{ batch.skipped_count }}</div>
+    <div class="text-sm text-slate-600">Skipped</div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+    <div class="text-2xl font-bold text-red-600">{{ batch.failed_count }}</div>
+    <div class="text-sm text-slate-600">Failed</div>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+    <div class="text-2xl font-bold text-slate-600">{{ batch.stale_count }}</div>
+    <div class="text-sm text-slate-600">Stale</div>
+  </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6">
+  <dl class="grid grid-cols-2 gap-2 text-sm">
+    <div><dt class="text-slate-500 inline">Type</dt><dd class="inline ml-1"><span class="px-2 py-0.5 rounded text-xs bg-slate-100">{{ batch.get_batch_type_display }}</span></dd></div>
+    <div><dt class="text-slate-500 inline">Status</dt><dd class="inline ml-1">{{ batch.status }}</dd></div>
+    <div><dt class="text-slate-500 inline">Created</dt><dd class="inline ml-1">{{ batch.created_at|date:"Y-m-d H:i" }}</dd></div>
+    <div><dt class="text-slate-500 inline">By</dt><dd class="inline ml-1">{{ batch.created_by|default:"—" }}</dd></div>
+  </dl>
+</div>
+
+<h2 class="text-lg font-semibold text-slate-800 mb-4">Items</h2>
+{% if items %}
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Source</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Document/Project</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Error</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200">
+      {% for i in items %}
+      <tr class="hover:bg-slate-50">
+        <td class="px-6 py-4">{{ i.source_name|truncatechars:50 }}</td>
+        <td class="px-6 py-4">
+          <span class="px-2 py-0.5 rounded text-xs {% if i.status == 'success' %}bg-green-100 text-green-800{% elif i.status == 'skipped' %}bg-amber-100 text-amber-800{% elif i.status == 'failed' %}bg-red-100 text-red-800{% else %}bg-slate-100 text-slate-700{% endif %}">{{ i.get_status_display }}</span>
+        </td>
+        <td class="px-6 py-4">
+          {% if i.document_id %}
+          <a href="{% url 'console:knowledge_doc_detail' i.document_id %}" class="text-teal-600 hover:underline">Doc #{{ i.document_id }}</a>
+          {% elif i.project_id %}
+          <a href="{% url 'console:structured_facts_project' i.project_id %}" class="text-teal-600 hover:underline">Project #{{ i.project_id }}</a>
+          {% else %}
+          —
+          {% endif %}
+        </td>
+        <td class="px-6 py-4 text-slate-600 max-w-xs truncate" title="{{ i.error_message }}">{{ i.error_message|truncatechars:60 }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="mt-2 text-sm text-slate-500">Showing up to 100 items.</p>
+{% else %}
+<p class="text-slate-500 text-sm">No items in this batch.</p>
+{% endif %}
+{% endblock %}

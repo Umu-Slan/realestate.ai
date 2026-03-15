@@ -1,0 +1,11 @@
+crm_id,lead_name,phone,email,source,campaign,historical_classification,notes,project_interest,status,created_at
+CRM-001,أحمد محمد,+201012345678,ahmed@example.com,web,spring2024,hot,Interested in 3BR,مشروع النخيل,qualified,2024-01-15
+CRM-002,Sarah Jones,+201098765432,sarah@test.com,instagram,insta_campaign,warm,Asked about payment plans,Sheikh Zayed Residence,contacted,2024-02-01
+CRM-003,محمد علي,01098765432,m.ali@email.com,whatsapp,wa_leads,cold,No response yet,,new,2024-02-10
+CRM-004,عمر خالد,+201011122233,omar.k@demo.com,web,landing_page,hot,Budget 2-3M,New Cairo Heights,qualified,2024-01-20
+CRM-005,Emma Wilson,01234567890,emma.w@example.com,phone,call_center,warm,Callback requested,Cairo Festival City,scheduled,2024-02-05
+CRM-006,فاطمة حسن,+201055566677,f.hassan@test.com,email,newsletter,cold,Opened but no reply,,new,2024-02-12
+CRM-007,Michael Brown,+201077788899,m.brown@demo.com,web,referral,hot,VIP - fast track,Mivida,qualified,2024-01-25
+CRM-008,يوسف إبراهيم,010111222333,yusuf@email.com,whatsapp,,warm,Objection: price too high,Palm Hills October,objection,2024-02-08
+CRM-009,Lisa Anderson,+201033344455,lisa@example.com,instagram,story_ad,cold,Viewed project page,,new,2024-02-14
+CRM-010,عبدالله محمود,012222333444,abdullah@test.com,web,google_ads,hot,Ready to visit,West Town,scheduled,2024-02-03

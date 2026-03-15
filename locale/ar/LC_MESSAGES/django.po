@@ -1,0 +1,668 @@
+# Arabic translations for Real Estate AI
+# Copyright (C) 2025
+# This file is distributed under the same license as the Real Estate AI package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-03-10 12:00+0000\n"
+"PO-Revision-Date: 2025-03-10 12:00+0000\n"
+"Last-Translator: \n"
+"Language: ar\n"
+"Language-Team: Arabic\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# Nav & Base
+msgid "Operator Console"
+msgstr "وحدة التحكم للمشغل"
+
+msgid "Conversations"
+msgstr "المحادثات"
+
+msgid "Customers"
+msgstr "العملاء"
+
+msgid "Support"
+msgstr "الدعم"
+
+msgid "Escalations"
+msgstr "التصعيدات"
+
+msgid "Recommendations"
+msgstr "التوصيات"
+
+msgid "Knowledge"
+msgstr "المعرفة"
+
+msgid "Facts"
+msgstr "البيانات"
+
+msgid "Company"
+msgstr "الشركة"
+
+msgid "Onboarding"
+msgstr "التهيئة"
+
+msgid "Analytics"
+msgstr "التحليلات"
+
+msgid "Audit"
+msgstr "المراجعة"
+
+msgid "Operations"
+msgstr "العمليات"
+
+msgid "Corrections"
+msgstr "التصحيحات"
+
+msgid "Improvement"
+msgstr "التحسين"
+
+msgid "Chat"
+msgstr "محادثة"
+
+msgid "Tools"
+msgstr "أدوات"
+
+msgid "Logout"
+msgstr "تسجيل الخروج"
+
+# Dashboard
+msgid "Dashboard"
+msgstr "لوحة التحكم"
+
+msgid "Period"
+msgstr "الفترة"
+
+msgid "7 days"
+msgstr "7 أيام"
+
+msgid "30 days"
+msgstr "30 يومًا"
+
+msgid "90 days"
+msgstr "90 يومًا"
+
+msgid "Lead Volume (%(d)sd)"
+msgstr "حجم العملاء المحتملين (%(d)s يوم)"
+
+msgid "Hot leads"
+msgstr "عملاء واعدون"
+
+msgid "Warm leads"
+msgstr "عملاء دافئون"
+
+msgid "Cold leads"
+msgstr "عملاء باردون"
+
+msgid "AI Responses"
+msgstr "ردود الذكاء الاصطناعي"
+
+msgid "Support Cases"
+msgstr "حالات الدعم"
+
+msgid "Open Escalations"
+msgstr "تصعيدات مفتوحة"
+
+msgid "Channel Distribution"
+msgstr "توزيع القنوات"
+
+msgid "No channel data for this period."
+msgstr "لا توجد بيانات قنوات لهذه الفترة."
+
+msgid "Quick Links"
+msgstr "روابط سريعة"
+
+msgid "Audit Log"
+msgstr "سجل المراجعة"
+
+# Empty states
+msgid "No data"
+msgstr "لا توجد بيانات"
+
+msgid "Add data or run a flow to get started."
+msgstr "ابدأ بإضافة بيانات أو تشغيل أحد التدفقات"
+
+msgid "No conversations"
+msgstr "لا توجد محادثات"
+
+msgid "No conversations yet"
+msgstr "لا توجد محادثات بعد"
+
+msgid "Conversations will appear here when customers interact with the chat."
+msgstr "ستظهر المحادثات هنا عندما يتفاعل العملاء مع المحادثة."
+
+msgid "Open Chat"
+msgstr "فتح المحادثة"
+
+msgid "No customers"
+msgstr "لا يوجد عملاء"
+
+msgid "Customers will appear when conversations are created."
+msgstr "سيظهر العملاء عند إنشاء المحادثات."
+
+msgid "No messages yet"
+msgstr "لا توجد رسائل بعد"
+
+msgid "No data for this period"
+msgstr "لا توجد بيانات لهذه الفترة"
+
+# Conversations
+msgid "Conversation Inbox"
+msgstr "صندوق المحادثات"
+
+msgid "Customer"
+msgstr "العميل"
+
+msgid "Channel"
+msgstr "القناة"
+
+msgid "Messages"
+msgstr "الرسائل"
+
+msgid "Created"
+msgstr "تاريخ الإنشاء"
+
+msgid "View"
+msgstr "عرض"
+
+# Support
+msgid "Support Cases Queue"
+msgstr "قائمة حالات الدعم"
+
+msgid "Total"
+msgstr "الإجمالي"
+
+msgid "Open"
+msgstr "مفتوح"
+
+msgid "Category"
+msgstr "الفئة"
+
+msgid "Severity"
+msgstr "الأولوية"
+
+msgid "Status"
+msgstr "الحالة"
+
+msgid "Summary"
+msgstr "الملخص"
+
+msgid "Conv"
+msgstr "محادثة"
+
+msgid "No cases in this queue."
+msgstr "لا توجد حالات في هذه القائمة."
+
+msgid "No support cases"
+msgstr "لا توجد طلبات دعم"
+
+msgid "Support cases are created when customer inquiries require follow-up or escalation."
+msgstr "تُنشأ حالات الدعم عندما تتطلب استفسارات العملاء متابعة أو تصعيدًا."
+
+# Escalations
+msgid "Escalations Queue"
+msgstr "قائمة التصعيدات"
+
+msgid "Reason"
+msgstr "السبب"
+
+msgid "Handoff Preview"
+msgstr "معاينة التسليم"
+
+msgid "No escalations"
+msgstr "لا توجد تصعيدات"
+
+msgid "Escalations will appear when customers request agent handoff or the system flags a conversation."
+msgstr "ستظهر التصعيدات عندما يطلب العملاء تسليمًا للوكيل أو عند قيام النظام بتصنيف المحادثة."
+
+# Knowledge
+msgid "Knowledge Documents"
+msgstr "مستندات المعرفة"
+
+msgid "All types"
+msgstr "جميع الأنواع"
+
+msgid "All access"
+msgstr "جميع الصلاحيات"
+
+msgid "Filter"
+msgstr "تصفية"
+
+msgid "Clear"
+msgstr "مسح"
+
+msgid "Title"
+msgstr "العنوان"
+
+msgid "Type"
+msgstr "النوع"
+
+msgid "Access"
+msgstr "الوصول"
+
+msgid "Verification"
+msgstr "التحقق"
+
+msgid "Fresh"
+msgstr "حديث"
+
+msgid "Inspect"
+msgstr "معاينة"
+
+msgid "No documents"
+msgstr "لا توجد مستندات"
+
+msgid "Upload or index documents to populate the knowledge base."
+msgstr "قم بتحميل أو فهرسة المستندات لملء قاعدة المعرفة."
+
+msgid "Retrieval Policy"
+msgstr "سياسة الاسترجاع"
+
+msgid "Exact pricing and availability are sourced only from the Project model, not from document chunks. Chunks are for descriptive content; unverified docs trigger safe fallback language."
+msgstr "يتم الحصول على الأسعار والتوافر الدقيقين فقط من نموذج المشروع، وليس من أجزاء المستندات. الأجزاء للمحتوى الوصفي؛ المستندات غير الموثقة تؤدي إلى لغة احتياطية آمنة."
+
+msgid "Test retrieval via API: POST /api/intelligence/analyze/ or use the chat."
+msgstr "اختبر الاسترجاع عبر API: POST /api/intelligence/analyze/ أو استخدم المحادثة."
+
+# Analytics
+msgid "Top Intents"
+msgstr "النية الرئيسية"
+
+msgid "Intent"
+msgstr "النية"
+
+msgid "Count"
+msgstr "العدد"
+
+msgid "No intent data for this period."
+msgstr "لا توجد بيانات نوايا لهذه الفترة."
+
+msgid "Top Support Categories"
+msgstr "فئات الدعم الرئيسية"
+
+msgid "No support category data for this period."
+msgstr "لا توجد بيانات فئات دعم لهذه الفترة."
+
+msgid "Top Objections"
+msgstr "الاعتراضات الرئيسية"
+
+msgid "Objection"
+msgstr "اعتراض"
+
+msgid "No objection data for this period."
+msgstr "لا توجد بيانات اعتراضات لهذه الفترة."
+
+msgid "Escalation Reasons"
+msgstr "أسباب التصعيد"
+
+msgid "No escalation data for this period."
+msgstr "لا توجد بيانات تصعيد لهذه الفترة."
+
+msgid "Average Lead Score by Source"
+msgstr "متوسط نقاط العملاء المحتملين حسب المصدر"
+
+msgid "Source"
+msgstr "المصدر"
+
+msgid "Avg Score"
+msgstr "متوسط النقاط"
+
+msgid "No score-by-source data for this period."
+msgstr "لا توجد بيانات نقاط حسب المصدر لهذه الفترة."
+
+# Operations
+msgid "%(ok)s/4 ok"
+msgstr "%(ok)s/4 جيد"
+
+msgid "Health Checks"
+msgstr "فحوصات الصحة"
+
+msgid "Operational State"
+msgstr "الحالة التشغيلية"
+
+msgid "Filters"
+msgstr "التصفيات"
+
+msgid "Conversation ID"
+msgstr "معرف المحادثة"
+
+msgid "Run ID"
+msgstr "معرف التشغيل"
+
+msgid "All runs"
+msgstr "جميع التشغيلات"
+
+msgid "Success only"
+msgstr "الناجحة فقط"
+
+msgid "Escalated only"
+msgstr "المُصعّدة فقط"
+
+msgid "Failed only"
+msgstr "الفاشلة فقط"
+
+msgid "Apply"
+msgstr "تطبيق"
+
+msgid "Recent Successful Runs"
+msgstr "التشغيلات الناجحة الأخيرة"
+
+msgid "Recent Failed Runs"
+msgstr "التشغيلات الفاشلة الأخيرة"
+
+msgid "Recent Escalations"
+msgstr "التصعيدات الأخيرة"
+
+msgid "Recent Support Cases"
+msgstr "حالات الدعم الأخيرة"
+
+msgid "All Pipeline Runs"
+msgstr "جميع تشغيلات المسار"
+
+msgid "No successful runs in this period."
+msgstr "لا توجد تشغيلات ناجحة في هذه الفترة."
+
+msgid "No failed runs in this period."
+msgstr "لا توجد تشغيلات فاشلة في هذه الفترة."
+
+msgid "No escalations in this period."
+msgstr "لا توجد تصعيدات في هذه الفترة."
+
+msgid "View all escalations"
+msgstr "عرض جميع التصعيدات"
+
+msgid "No support cases in this period."
+msgstr "لا توجد حالات دعم في هذه الفترة."
+
+msgid "View all support cases"
+msgstr "عرض جميع حالات الدعم"
+
+msgid "No orchestration runs in this period."
+msgstr "لا توجد تشغيلات مسار في هذه الفترة."
+
+# Auth
+msgid "Login"
+msgstr "تسجيل الدخول"
+
+msgid "Invalid username or password."
+msgstr "اسم المستخدم أو كلمة المرور غير صحيحة."
+
+msgid "Username"
+msgstr "اسم المستخدم"
+
+msgid "Password"
+msgstr "كلمة المرور"
+
+msgid "Log in"
+msgstr "تسجيل الدخول"
+
+# Profile / Customers
+msgid "Back to Conversations"
+msgstr "العودة إلى المحادثات"
+
+msgid "Profile"
+msgstr "الملف الشخصي"
+
+msgid "Name / External ID"
+msgstr "الاسم / المعرف الخارجي"
+
+# New strings - conversation detail, recommendations, etc.
+msgid "Customer & Routing"
+msgstr "العميل والتوجيه"
+
+msgid "Customer type"
+msgstr "نوع العميل"
+
+msgid "Mode"
+msgstr "الوضع"
+
+msgid "Score"
+msgstr "النقاط"
+
+msgid "Stage"
+msgstr "المرحلة"
+
+msgid "Routing"
+msgstr "التوجيه"
+
+msgid "Escalation"
+msgstr "التصعيد"
+
+msgid "Qualification"
+msgstr "التأهيل"
+
+msgid "Response"
+msgstr "الرد"
+
+msgid "Sources"
+msgstr "المصادر"
+
+msgid "Marked good"
+msgstr "تم تمييزه كجيد"
+
+msgid "Corrected"
+msgstr "تم التصحيح"
+
+msgid "Good"
+msgstr "جيد"
+
+msgid "Corrected response"
+msgstr "الرد المصحح"
+
+msgid "Issue type"
+msgstr "نوع المشكلة"
+
+msgid "Submit correction"
+msgstr "إرسال التصحيح"
+
+msgid "Journey & Next Action"
+msgstr "الرحلة والإجراء التالي"
+
+msgid "Next best action"
+msgstr "أفضل إجراء تالي"
+
+msgid "Lead Score"
+msgstr "نقاط العميل المحتمل"
+
+msgid "Journey"
+msgstr "الرحلة"
+
+msgid "Reason codes"
+msgstr "أسباب النقاط"
+
+msgid "Budget"
+msgstr "الميزانية"
+
+msgid "Location"
+msgstr "الموقع"
+
+msgid "Property type"
+msgstr "نوع العقار"
+
+msgid "Action Logs"
+msgstr "سجلات الإجراءات"
+
+msgid "No action logs."
+msgstr "لا توجد سجلات إجراءات."
+
+msgid "Linked"
+msgstr "مرتبط"
+
+msgid "Recommendations Panel"
+msgstr "لوحة التوصيات"
+
+msgid "Project matches with confidence, reasons, and trade-offs—grounded in available project data."
+msgstr "تطابقات المشاريع مع الثقة والأسباب والتنازلات—مستندة إلى بيانات المشاريع المتاحة."
+
+msgid "Project"
+msgstr "المشروع"
+
+msgid "Rank"
+msgstr "الترتيب"
+
+msgid "Confidence"
+msgstr "الثقة"
+
+msgid "Match Reasons"
+msgstr "أسباب التطابق"
+
+msgid "Trade-offs"
+msgstr "التنازلات"
+
+msgid "Rationale"
+msgstr "المبرر"
+
+msgid "No recommendations"
+msgstr "لا توجد توصيات حالياً"
+
+msgid "Recommendations will appear when customers receive project matches."
+msgstr "ستظهر التوصيات عندما يحصل العملاء على تطابقات المشاريع."
+
+# System messages
+msgid "Processing document"
+msgstr "جارٍ معالجة الملف..."
+
+msgid "Operation successful"
+msgstr "تم تنفيذ العملية بنجاح"
+
+# Onboarding
+msgid "Import real company data: documents, project metadata, payment plans, FAQs, support SOPs, and CRM exports."
+msgstr "استورد بيانات الشركة الحقيقية: المستندات، وبيانات المشاريع، وخطط الدفع، والأسئلة الشائعة، وإجراءات الدعم، وتصديرات CRM."
+
+msgid "Documents"
+msgstr "المستندات"
+
+msgid "PDF, CSV, Excel, TXT. Brochures, FAQs, SOPs, credibility."
+msgstr "PDF، CSV، Excel، TXT. البروشورات، الأسئلة الشائعة، الإجراءات، المصداقية."
+
+msgid "Document type"
+msgstr "نوع المستند"
+
+msgid "Project (optional)"
+msgstr "المشروع (اختياري)"
+
+msgid "Source of truth"
+msgstr "مصدر الحقيقة"
+
+msgid "Upload & Ingest"
+msgstr "تحميل ومعالجة"
+
+msgid "Structured Data"
+msgstr "البيانات المنظمة"
+
+msgid "Project metadata, payment plans. CSV with columns: name, location, price_min, price_max, installment_years_min, down_payment_pct_min."
+msgstr "بيانات المشاريع، خطط الدفع. CSV بالأعمدة: name, location, price_min, price_max, installment_years_min, down_payment_pct_min."
+
+msgid "Import CSV"
+msgstr "استيراد CSV"
+
+msgid "CRM Export"
+msgstr "تصدير CRM"
+
+msgid "Leads, contacts. CSV or Excel. Columns: crm_id, name, phone, email, notes."
+msgstr "العملاء المحتملون، جهات الاتصال. CSV أو Excel. الأعمدة: crm_id, name, phone, email, notes."
+
+msgid "Import CRM"
+msgstr "استيراد CRM"
+
+msgid "Reindex Knowledge"
+msgstr "إعادة فهرسة المعرفة"
+
+msgid "Rebuild embeddings for documents after bulk import or model change."
+msgstr "إعادة بناء التضمينات للمستندات بعد الاستيراد الجماعي أو تغيير النموذج."
+
+msgid "Reindex All Documents"
+msgstr "إعادة فهرسة جميع المستندات"
+
+msgid "Recent Batches"
+msgstr "الدفعات الأخيرة"
+
+msgid "Imported"
+msgstr "مستورد"
+
+msgid "Skipped"
+msgstr "تخطي"
+
+msgid "Failed"
+msgstr "فشل"
+
+msgid "Data Onboarding"
+msgstr "تهيئة البيانات"
+
+msgid "No batches yet"
+msgstr "لا توجد دفعات بعد"
+
+msgid "Upload documents, structured data, or CRM exports to get started."
+msgstr "قم بتحميل المستندات أو البيانات المنظمة أو تصديرات CRM للبدء."
+
+# UI polish (dashboard, notifications, recommendations)
+msgid "Operations overview for the selected period."
+msgstr "نظرة عامة على العمليات للفترة المحددة."
+
+msgid "Escalations, support cases, and new leads at a glance."
+msgstr "التصعيدات وحالات الدعم والعملاء الجدد في لمحة."
+
+msgid "Urgent"
+msgstr "عاجل"
+
+msgid "Attention"
+msgstr "انتباه"
+
+msgid "New"
+msgstr "جديد"
+
+msgid "confidence"
+msgstr "ثقة"
+
+msgid "Project matches with confidence, match reasons, and trade-offs."
+msgstr "تطابقات المشاريع مع الثقة وأسباب التطابق والتنازلات."
+
+msgid "All customers and leads from conversations."
+msgstr "جميع العملاء والعملاء المحتملين من المحادثات."
+
+msgid "AI reasoning preview"
+msgstr "معاينة تفكير الذكاء الاصطناعي"
+
+msgid "Welcome to Real Estate AI"
+msgstr "مرحباً بك في Real Estate AI"
+
+msgid "Get started in 4 simple steps."
+msgstr "ابدأ في 4 خطوات بسيطة."
+
+msgid "Add project metadata and pricing"
+msgstr "إضافة بيانات المشاريع والأسعار"
+
+msgid "Brochures, FAQs, SOPs"
+msgstr "البروشورات، الأسئلة الشائعة، الإجراءات"
+
+msgid "Leads and contacts"
+msgstr "العملاء المحتملون وجهات الاتصال"
+
+msgid "See the AI in action"
+msgstr "شاهد الذكاء الاصطناعي في العمل"
+
+msgid "Get started"
+msgstr "ابدأ"
+
+msgid "Command palette"
+msgstr "لوحة الأوامر"
+
+msgid "AI recommended"
+msgstr "أوصى الذكاء الاصطناعي بـ"
+
+msgid "started conversation"
+msgstr "بدأ المحادثة"
+
+msgid "Support case"
+msgstr "حالة دعم"
+
+msgid "Activity"
+msgstr "النشاط"
+
+msgid "No recent activity."
+msgstr "لا يوجد نشاط حديث."

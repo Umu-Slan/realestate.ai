@@ -1,0 +1,74 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Notifications" %}{% endblock %}
+{% block content %}
+<div class="mb-8">
+  <h1 class="text-2xl font-bold text-slate-800">{% trans "Notifications" %}</h1>
+  <p class="text-slate-500 text-sm mt-1">{% trans "Escalations, support cases, and new leads at a glance." %}</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+    <div class="px-6 py-4 border-b border-slate-200 bg-red-50/70">
+      <h2 class="font-semibold text-slate-800 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-red-500" title="{% trans 'Urgent' %}"></span>
+        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        {% trans "Escalations" %}
+      </h2>
+    </div>
+    <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+      {% for e in escalations %}
+      <a href="{% url 'console:escalation_detail' e.id %}" class="block px-4 py-3.5 hover:bg-red-50/40 transition group">
+        <p class="text-sm font-medium text-slate-800 group-hover:text-red-900">{{ e.reason|truncatewords:12 }}</p>
+        <p class="text-xs text-slate-500 mt-1">{{ e.created_at|timesince }}</p>
+      </a>
+      {% empty %}
+      <p class="p-8 text-slate-500 text-sm text-center">{% trans "No recent escalations." %}</p>
+      {% endfor %}
+    </div>
+    <div class="p-3 border-t border-slate-100 bg-slate-50/50"><a href="{% url 'console:escalations' %}" class="inline-flex items-center gap-1 text-sm font-medium text-teal-600 hover:text-teal-700">{% trans "View all" %} <span aria-hidden="true">→</span></a></div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+    <div class="px-6 py-4 border-b border-slate-200 bg-amber-50/70">
+      <h2 class="font-semibold text-slate-800 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amber-500" title="{% trans 'Attention' %}"></span>
+        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        {% trans "Support cases" %}
+      </h2>
+    </div>
+    <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+      {% for sc in support_cases %}
+      <a href="{% url 'console:support_case_detail' sc.id %}" class="block px-4 py-3.5 hover:bg-amber-50/40 transition group">
+        <p class="text-sm font-medium text-slate-800 group-hover:text-amber-900">{{ sc.category }} <span class="text-slate-400">#{{ sc.id }}</span></p>
+        <p class="text-xs text-slate-500 mt-1">{{ sc.created_at|timesince }}</p>
+      </a>
+      {% empty %}
+      <p class="p-8 text-slate-500 text-sm text-center">{% trans "No recent support cases." %}</p>
+      {% endfor %}
+    </div>
+    <div class="p-3 border-t border-slate-100 bg-slate-50/50"><a href="{% url 'console:support_cases' %}" class="inline-flex items-center gap-1 text-sm font-medium text-teal-600 hover:text-teal-700">{% trans "View all" %} <span aria-hidden="true">→</span></a></div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+    <div class="px-6 py-4 border-b border-slate-200 bg-teal-50/70">
+      <h2 class="font-semibold text-slate-800 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-teal-500" title="{% trans 'New' %}"></span>
+        <svg class="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+        {% trans "New leads" %}
+      </h2>
+    </div>
+    <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+      {% for lead in new_leads %}
+      <a href="{% url 'console:customer_detail' lead.id %}" class="block px-4 py-3.5 hover:bg-teal-50/40 transition group">
+        <p class="text-sm font-medium text-slate-800 group-hover:text-teal-900">{% if lead.identity %}{{ lead.identity.name|default:lead.identity.external_id|default:lead.id }}{% else %}Lead #{{ lead.id }}{% endif %}</p>
+        <p class="text-xs text-slate-500 mt-1">{{ lead.created_at|timesince }}</p>
+      </a>
+      {% empty %}
+      <p class="p-8 text-slate-500 text-sm text-center">{% trans "No recent leads." %}</p>
+      {% endfor %}
+    </div>
+    <div class="p-3 border-t border-slate-100 bg-slate-50/50"><a href="{% url 'console:customers' %}" class="inline-flex items-center gap-1 text-sm font-medium text-teal-600 hover:text-teal-700">{% trans "View all" %} <span aria-hidden="true">→</span></a></div>
+  </div>
+</div>
+{% endblock %}

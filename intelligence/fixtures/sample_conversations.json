@@ -1,0 +1,29 @@
+[
+  {
+    "id": "hot_lead_en",
+    "scenario": "hot_lead",
+    "language": "en",
+    "messages": [
+      {"role": "user", "content": "I'm looking for a 3BR apartment in New Cairo, budget around 4 million EGP."},
+      {"role": "user", "content": "I'd like to schedule a site visit for this weekend."}
+    ],
+    "expected_temperature": "hot",
+    "expected_intent": "schedule_visit"
+  },
+  {
+    "id": "spam",
+    "scenario": "spam",
+    "messages": [
+      {"role": "user", "content": "Click here for free money!!! http://scam.com/win"}
+    ],
+    "expected_intent": "spam"
+  },
+  {
+    "id": "broker_inquiry",
+    "scenario": "broker_inquiry",
+    "messages": [
+      {"role": "user", "content": "انا سمسار وعايز اتعامل معاكم"}
+    ],
+    "expected_intent": "broker_inquiry"
+  }
+]

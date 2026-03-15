@@ -1,0 +1,256 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% trans "Operator Console" %}{% endblock %} | Real Estate AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root { --font-arabic: 'IBM Plex Sans Arabic', 'Inter', sans-serif; --sidebar-w: 240px; }
+    body { font-family: var(--font-arabic); }
+    .nav-active { background: rgba(20, 184, 166, 0.12); color: #0d9488; border-radius: 8px; font-weight: 500; }
+    .badge-hot { background: #fee2e2; color: #dc2626; }
+    .badge-ai { background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: white; font-size: 0.7rem; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
+    .badge-warm { background: #fef3c7; color: #d97706; }
+    .badge-cold { background: #f1f5f9; color: #64748b; }
+    .badge-open { background: #fee2e2; color: #dc2626; }
+    .badge-in-progress { background: #dbeafe; color: #2563eb; }
+    .badge-resolved { background: #dcfce7; color: #16a34a; }
+    .badge-critical { background: #fee2e2; color: #b91c1c; }
+    .badge-high { background: #ffedd5; color: #c2410c; }
+    .badge-medium { background: #fef3c7; color: #b45309; }
+    .badge-low { background: #f1f5f9; color: #64748b; }
+    .msg-bubble { border-width: 0 0 0 4px; border-style: solid; }
+    .msg-user { border-color: #2dd4bf; margin-inline-start: 2rem; }
+    .msg-assistant { border-color: #e2e8f0; margin-inline-end: 2rem; }
+    [dir="rtl"] .msg-user { margin-inline-start: 0; margin-inline-end: 2rem; border-left: 0; border-right-width: 4px; }
+    [dir="rtl"] .msg-assistant { margin-inline-end: 0; margin-inline-start: 2rem; border-right: 0; border-left-width: 4px; }
+    body { line-height: 1.6; }
+    [dir="rtl"] body { line-height: 1.75; }
+    .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: skeleton 1.5s ease-in-out infinite; }
+    @keyframes skeleton { to { background-position: 200% 0; } }
+    .card-hover { transition: box-shadow 0.2s ease, transform 0.2s ease; }
+    .card-hover:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+  <!-- Sidebar -->
+  <aside class="hidden lg:flex flex-col w-[var(--sidebar-w)] min-h-screen bg-white border-r border-slate-200 shrink-0">
+    <div class="p-4 border-b border-slate-200">
+      <a href="{% url 'console:dashboard' %}" class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-lg bg-teal-600 flex items-center justify-center text-white font-bold text-sm">RE</div>
+        <span class="font-semibold text-slate-800">Real Estate AI</span>
+      </a>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
+      <a href="{% url 'console:dashboard' %}" class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 rounded-lg hover:bg-slate-100 transition {% if nav_section == 'dashboard' or not nav_section %}nav-active{% endif %}">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2z"/></svg>
+        {% trans "Dashboard" %}
+      </a>
+      <div class="pt-4 pb-1 px-3 text-xs font-medium text-slate-400 uppercase tracking-wider">{% trans "Engagement" %}</div>
+      <a href="{% url 'console:conversations' %}" class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 rounded-lg hover:bg-slate-100 transition {% if nav_section == 'conversations' %}nav-active{% endif %}">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        {% trans "Conversations" %}
+      </a>
+      <a href="{% url 'console:customers' %}" class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 rounded-lg hover:bg-slate-100 transition {% if nav_section == 'customers' %}nav-active{% endif %}">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        {% trans "Customers" %}
+      </a>
+      <a href="{% url 'console:customers' %}" class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 rounded-lg hover:bg-slate-100 transition {% if nav_section == 'leads' %}nav-active{% endif %}">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+        {% trans "Leads" %}
+      </a>
+      <a href="{% url 'console:recommendations' %}" class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 rounded-lg hover:bg-slate-100 transition {% if nav_section == 'recommendations' %}nav-active{% endif %}">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        {% trans "Recommendations" %}
+      </a>
+      <div class="pt-4 pb-1 px-3 text-xs font-medium text-slate-400 uppercase tracking-wider">{% trans "Support" %}</div>
+      <a href="{% url 'console:support_cases' %}" class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 rounded-lg hover:bg-slate-100 transition {% if nav_section == 'support' %}nav-active{% endif %}">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        {% trans "Support" %}
+      </a>
+      <a href="{% url 'console:escalations' %}" class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 rounded-lg hover:bg-slate-100 transition {% if nav_section == 'escalations' %}nav-active{% endif %}">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        {% trans "Escalations" %}
+      </a>
+      <div class="pt-4 pb-1 px-3 text-xs font-medium text-slate-400 uppercase tracking-wider">{% trans "Content" %}</div>
+      <a href="{% url 'console:knowledge' %}" class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 rounded-lg hover:bg-slate-100 transition {% if nav_section == 'knowledge' %}nav-active{% endif %}">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        {% trans "Knowledge" %}
+      </a>
+      <div class="pt-4 pb-1 px-3 text-xs font-medium text-slate-400 uppercase tracking-wider">{% trans "Insights" %}</div>
+      <a href="{% url 'console:analytics' %}" class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 rounded-lg hover:bg-slate-100 transition {% if nav_section == 'analytics' %}nav-active{% endif %}">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        {% trans "Analytics" %}
+      </a>
+      <a href="{% url 'console:operations' %}" class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 rounded-lg hover:bg-slate-100 transition {% if nav_section == 'operations' %}nav-active{% endif %}">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        {% trans "Operations" %}
+      </a>
+      <div class="pt-4 pb-1 px-3 text-xs font-medium text-slate-400 uppercase tracking-wider">{% trans "Content & Admin" %}</div>
+      <a href="{% url 'onboarding:dashboard' %}" class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 rounded-lg hover:bg-slate-100 transition {% if nav_section == 'onboarding' %}nav-active{% endif %}">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+        {% trans "Onboarding" %}
+      </a>
+      <a href="{% url 'console:company_config' %}" class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-600 rounded-lg hover:bg-slate-100 transition {% if nav_section == 'company' %}nav-active{% endif %}">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        {% trans "Settings" %}
+      </a>
+    </nav>
+    <div class="p-3 border-t border-slate-200">
+      <a href="/api/engines/demo/" target="_blank" class="flex items-center gap-3 px-3 py-2.5 text-sm text-teal-600 bg-teal-50 rounded-lg hover:bg-teal-100 transition">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        {% trans "Try Chat" %}
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- Top bar -->
+    <header class="h-14 shrink-0 flex items-center gap-4 px-4 lg:px-6 bg-white border-b border-slate-200">
+      <button type="button" class="lg:hidden p-2 -ms-2 rounded-lg text-slate-600 hover:bg-slate-100" id="sidebar-toggle" aria-label="Menu">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <form action="{% url 'console:search' %}" method="get" class="flex-1 max-w-xl hidden sm:block">
+        <div class="relative">
+          <input type="search" name="q" placeholder="{% trans 'Search customers, conversations, projects, support...' %}" class="w-full ps-10 pe-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:ring-2 focus:ring-teal-500 focus:border-teal-500" value="{{ request.GET.q|default:'' }}">
+          <svg class="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+      </form>
+      <div class="flex items-center gap-2">
+        <a href="{% url 'console:notifications' %}" class="relative p-2 rounded-lg text-slate-600 hover:bg-slate-100 inline-flex" title="{% trans 'Notifications' %}">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          {% if stats.escalations_open %}
+          <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" title="{% trans 'Open escalations' %}"></span>
+          {% endif %}
+        </a>
+        <form action="{% url 'set_language' %}" method="post" class="inline-flex gap-1">
+          {% csrf_token %}
+          <input name="next" type="hidden" value="{{ request.path }}">
+          {% get_current_language as current_lang %}
+          {% for code, name in LANGUAGES %}
+          <button type="submit" name="language" value="{{ code }}" class="px-2 py-1 text-xs rounded-md {% if code == current_lang %}bg-teal-100 text-teal-800 font-medium{% else %}text-slate-500 hover:text-slate-700 hover:bg-slate-100{% endif %}">{{ name }}</button>
+          {% endfor %}
+        </form>
+        {% if user.is_authenticated %}
+        <div class="flex items-center gap-3 pl-2 border-l border-slate-200">
+          <span class="text-sm text-slate-600 hidden sm:inline">{% if company_name %}{{ company_name }}{% else %}Real Estate AI{% endif %}</span>
+          <span class="text-sm font-medium text-slate-800">{{ user.username }}</span>
+          <a href="{% url 'accounts:logout' %}" class="text-sm text-slate-500 hover:text-slate-700">{% trans "Logout" %}</a>
+        </div>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-auto p-4 lg:p-6">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- Mobile sidebar overlay (RTL: sidebar on right, LTR: on left) -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden hidden" aria-hidden="true"></div>
+  <aside id="sidebar-mobile" class="fixed top-0 bottom-0 w-[var(--sidebar-w)] bg-white z-50 lg:hidden transform transition-transform duration-200 overflow-y-auto {% if LANGUAGE_BIDI %}right-0 translate-x-full{% else %}left-0 -translate-x-full{% endif %}">
+    <div class="p-4 border-b">
+      <a href="{% url 'console:dashboard' %}" class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-lg bg-teal-600 flex items-center justify-center text-white font-bold text-sm">RE</div>
+        <span class="font-semibold text-slate-800">Real Estate AI</span>
+      </a>
+    </div>
+    <nav class="p-3 space-y-0.5">
+      <a href="{% url 'console:dashboard' %}" class="block px-3 py-2.5 rounded-lg text-sm {% if not nav_section %}nav-active{% else %}text-slate-600 hover:bg-slate-100{% endif %}">{% trans "Dashboard" %}</a>
+      <a href="{% url 'console:conversations' %}" class="block px-3 py-2.5 rounded-lg text-sm {% if nav_section == 'conversations' %}nav-active{% else %}text-slate-600 hover:bg-slate-100{% endif %}">{% trans "Conversations" %}</a>
+      <a href="{% url 'console:customers' %}" class="block px-3 py-2.5 rounded-lg text-sm {% if nav_section == 'customers' %}nav-active{% else %}text-slate-600 hover:bg-slate-100{% endif %}">{% trans "Customers" %}</a>
+      <a href="{% url 'console:support_cases' %}" class="block px-3 py-2.5 rounded-lg text-sm {% if nav_section == 'support' %}nav-active{% else %}text-slate-600 hover:bg-slate-100{% endif %}">{% trans "Support" %}</a>
+      <a href="{% url 'console:escalations' %}" class="block px-3 py-2.5 rounded-lg text-sm {% if nav_section == 'escalations' %}nav-active{% else %}text-slate-600 hover:bg-slate-100{% endif %}">{% trans "Escalations" %}</a>
+      <a href="{% url 'console:knowledge' %}" class="block px-3 py-2.5 rounded-lg text-sm {% if nav_section == 'knowledge' %}nav-active{% else %}text-slate-600 hover:bg-slate-100{% endif %}">{% trans "Knowledge" %}</a>
+      <a href="{% url 'console:analytics' %}" class="block px-3 py-2.5 rounded-lg text-sm {% if nav_section == 'analytics' %}nav-active{% else %}text-slate-600 hover:bg-slate-100{% endif %}">{% trans "Analytics" %}</a>
+      <a href="{% url 'console:operations' %}" class="block px-3 py-2.5 rounded-lg text-sm {% if nav_section == 'operations' %}nav-active{% else %}text-slate-600 hover:bg-slate-100{% endif %}">{% trans "Operations" %}</a>
+      <a href="{% url 'onboarding:dashboard' %}" class="block px-3 py-2.5 rounded-lg text-sm {% if nav_section == 'onboarding' %}nav-active{% else %}text-slate-600 hover:bg-slate-100{% endif %}">{% trans "Onboarding" %}</a>
+      <a href="{% url 'console:company_config' %}" class="block px-3 py-2.5 rounded-lg text-sm {% if nav_section == 'company' %}nav-active{% else %}text-slate-600 hover:bg-slate-100{% endif %}">{% trans "Settings" %}</a>
+    </nav>
+  </aside>
+  <script>
+    (function() {
+      var overlay = document.getElementById('sidebar-overlay');
+      var sidebar = document.getElementById('sidebar-mobile');
+      var toggle = document.getElementById('sidebar-toggle');
+      var closedClass = document.documentElement.dir === 'rtl' ? 'translate-x-full' : '-translate-x-full';
+      function openSidebar() {
+        overlay.classList.remove('hidden');
+        sidebar.classList.remove(closedClass);
+      }
+      function closeSidebar() {
+        overlay.classList.add('hidden');
+        sidebar.classList.add(closedClass);
+      }
+      toggle?.addEventListener('click', openSidebar);
+      overlay?.addEventListener('click', closeSidebar);
+    })();
+  </script>
+
+  <!-- Command palette (Cmd+K / Ctrl+K) -->
+  <div id="command-palette" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeCommandPalette()"></div>
+    <div class="fixed start-1/2 top-[20%] -translate-x-1/2 w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden" role="dialog" aria-label="{% trans 'Command palette' %}">
+      <form action="{% url 'console:search' %}" method="get" class="flex items-center gap-3 p-4 border-b border-slate-100">
+        <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input type="search" name="q" id="command-palette-input" placeholder="{% trans 'Search customers, projects, conversations, support...' %}" class="flex-1 text-base border-0 focus:ring-0 focus:outline-none placeholder-slate-400" autocomplete="off">
+      </form>
+      <div class="p-2 max-h-64 overflow-y-auto">
+        <a href="{% url 'console:customers' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-slate-50 transition"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>{% trans "Customers" %}</a>
+        <a href="{% url 'console:conversations' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-slate-50 transition"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>{% trans "Conversations" %}</a>
+        <a href="{% url 'console:support_cases' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-slate-50 transition"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>{% trans "Support cases" %}</a>
+        <a href="{% url 'console:recommendations' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:bg-slate-50 transition"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>{% trans "Recommendations" %}</a>
+        <a href="/api/engines/demo/" target="_blank" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-teal-600 hover:bg-teal-50 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>{% trans "Try Chat" %}</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onboarding modal (first-time) -->
+  <div id="onboarding-modal" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" onclick="closeOnboarding()"></div>
+    <div class="fixed start-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 p-8" role="dialog" aria-label="{% trans 'Welcome' %}">
+      <h2 class="text-2xl font-bold text-slate-800 mb-2">{% trans "Welcome to Real Estate AI" %}</h2>
+      <p class="text-slate-600 mb-6">{% trans "Get started in 4 simple steps." %}</p>
+      <ol class="space-y-4 mb-8">
+        <li class="flex gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-700 font-semibold">1</span><div><strong>{% trans "Upload projects" %}</strong><br><span class="text-sm text-slate-500">{% trans "Add project metadata and pricing" %}</span></div></li>
+        <li class="flex gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-700 font-semibold">2</span><div><strong>{% trans "Upload knowledge docs" %}</strong><br><span class="text-sm text-slate-500">{% trans "Brochures, FAQs, SOPs" %}</span></div></li>
+        <li class="flex gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-700 font-semibold">3</span><div><strong>{% trans "Import CRM" %}</strong><br><span class="text-sm text-slate-500">{% trans "Leads and contacts" %}</span></div></li>
+        <li class="flex gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-100 text-teal-700 font-semibold">4</span><div><strong>{% trans "Start test chat" %}</strong><br><span class="text-sm text-slate-500">{% trans "See the AI in action" %}</span></div></li>
+      </ol>
+      <div class="flex gap-3">
+        <button type="button" onclick="closeOnboarding()" class="px-5 py-2.5 bg-teal-600 text-white rounded-xl font-medium hover:bg-teal-700 transition">{% trans "Get started" %}</button>
+        <a href="{% url 'onboarding:upload_structured' %}" class="px-5 py-2.5 border border-slate-200 rounded-xl font-medium text-slate-700 hover:bg-slate-50 transition">{% trans "Upload projects" %}</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    function openCommandPalette() { document.getElementById('command-palette').classList.remove('hidden'); document.getElementById('command-palette-input').focus(); }
+    function closeCommandPalette() { document.getElementById('command-palette').classList.add('hidden'); }
+    document.addEventListener('keydown', function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); document.getElementById('command-palette').classList.contains('hidden') ? openCommandPalette() : closeCommandPalette(); }
+      if (e.key === 'Escape') closeCommandPalette();
+    });
+    if (!localStorage.getItem('rei_onboarding_seen')) {
+      document.getElementById('onboarding-modal').classList.remove('hidden');
+    }
+    function closeOnboarding() {
+      document.getElementById('onboarding-modal').classList.add('hidden');
+      localStorage.setItem('rei_onboarding_seen', '1');
+    }
+    window.closeOnboarding = closeOnboarding;
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeOnboarding(); });
+  })();
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

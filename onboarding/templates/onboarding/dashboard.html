@@ -1,0 +1,113 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Data Onboarding" %}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-800 mb-6">{% trans "Data Onboarding" %}</h1>
+
+<p class="text-slate-600 mb-6">{% trans "Import real company data: documents, project metadata, payment plans, FAQs, support SOPs, and CRM exports." %}</p>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+  <!-- Documents -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "Documents" %}</h2>
+    <p class="text-sm text-slate-600 mb-4">{% trans "PDF, CSV, Excel, TXT. Brochures, FAQs, SOPs, credibility." %}</p>
+    <form action="{% url 'onboarding:upload_documents' %}" method="post" enctype="multipart/form-data" class="space-y-3">
+      {% csrf_token %}
+      <input type="file" name="files" multiple accept=".pdf,.csv,.xlsx,.xls,.txt,.md" class="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700">
+      <div>
+        <label class="block text-xs text-slate-500 mb-1">{% trans "Document type" %}</label>
+        <select name="document_type" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          {% for value, label in document_types %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-slate-500 mb-1">{% trans "Project (optional)" %}</label>
+        <select name="project_id" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
+          <option value="">— Company-level —</option>
+          {% for p in projects %}
+          <option value="{{ p.id }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <label class="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="source_of_truth">
+        <span>{% trans "Source of truth" %}</span>
+      </label>
+      <button type="submit" class="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">{% trans "Upload & Ingest" %}</button>
+    </form>
+  </div>
+
+  <!-- Structured data -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "Structured Data" %}</h2>
+    <p class="text-sm text-slate-600 mb-4">{% trans "Project metadata, payment plans. CSV with columns: name, location, price_min, price_max, installment_years_min, down_payment_pct_min." %}</p>
+    <form action="{% url 'onboarding:upload_structured' %}" method="post" enctype="multipart/form-data" class="space-y-3">
+      {% csrf_token %}
+      <input type="file" name="file" accept=".csv" class="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700">
+      <button type="submit" class="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">{% trans "Import CSV" %}</button>
+    </form>
+  </div>
+
+  <!-- CRM -->
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+    <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "CRM Export" %}</h2>
+    <p class="text-sm text-slate-600 mb-4">{% trans "Leads, contacts. CSV or Excel. Columns: crm_id, name, phone, email, notes." %}</p>
+    <form action="{% url 'onboarding:upload_crm' %}" method="post" enctype="multipart/form-data" class="space-y-3">
+      {% csrf_token %}
+      <input type="file" name="file" accept=".csv,.xlsx,.xls" class="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700">
+      <button type="submit" class="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">{% trans "Import CRM" %}</button>
+    </form>
+  </div>
+</div>
+
+<!-- Reindex -->
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+  <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "Reindex Knowledge" %}</h2>
+  <p class="text-sm text-slate-600 mb-4">{% trans "Rebuild embeddings for documents after bulk import or model change." %}</p>
+  <form action="{% url 'onboarding:reindex_documents' %}" method="post" class="inline">
+    {% csrf_token %}
+    <button type="submit" class="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-500 font-medium">{% trans "Reindex All Documents" %}</button>
+  </form>
+</div>
+
+<!-- Recent batches -->
+<h2 class="text-lg font-semibold text-slate-800 mb-4">{% trans "Recent Batches" %}</h2>
+{% if batches %}
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+  <table class="min-w-full divide-y divide-slate-200">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">ID</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">{% trans "Type" %}</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">{% trans "Imported" %}</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">{% trans "Skipped" %}</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">{% trans "Failed" %}</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">{% trans "Status" %}</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">{% trans "Created" %}</th>
+        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200">
+      {% for b in batches %}
+      <tr class="hover:bg-slate-50">
+        <td class="px-6 py-4 text-sm font-medium">{{ b.id }}</td>
+        <td class="px-6 py-4 text-sm">{{ b.get_batch_type_display }}</td>
+        <td class="px-6 py-4 text-sm text-green-600">{{ b.imported_count }}</td>
+        <td class="px-6 py-4 text-sm text-amber-600">{{ b.skipped_count }}</td>
+        <td class="px-6 py-4 text-sm text-red-600">{{ b.failed_count }}</td>
+        <td class="px-6 py-4"><span class="px-2 py-0.5 rounded text-xs {% if b.status == 'completed' %}bg-green-100 text-green-800{% elif b.status == 'partial' %}bg-amber-100 text-amber-800{% else %}bg-slate-100 text-slate-700{% endif %}">{{ b.status }}</span></td>
+        <td class="px-6 py-4 text-sm text-slate-500">{{ b.created_at|date:"M d, H:i" }}</td>
+        <td class="px-6 py-4"><a href="{% url 'onboarding:batch_detail' b.id %}" class="text-teal-600 font-medium hover:underline">{% trans "View" %} →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{% trans "No batches yet" as no_batch_title %}
+{% trans "Upload documents, structured data, or CRM exports to get started." as no_batch_msg %}
+{% include "console/includes/empty_state.html" with title=no_batch_title message=no_batch_msg %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,66 @@
+# Production-oriented compose: app + postgres + redis
+# Usage: docker compose -f docker-compose.production.yml up -d
+# Requires: .env with SECRET_KEY, ALLOWED_HOSTS, POSTGRES_PASSWORD (optional)
+
+services:
+  app:
+    build: .
+    image: realestate-ai:latest
+    container_name: realestate_app
+    env_file: .env
+    environment:
+      DJANGO_ENV: production
+      DJANGO_SETTINGS_MODULE: config.settings_production
+      DATABASE_URL: postgresql://realestate:${POSTGRES_PASSWORD:-realestate_prod}@postgres:5432/realestate_ai
+      CELERY_BROKER_URL: redis://redis:6379/1
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - media_prod_data:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/health/ready/"] 
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: realestate_postgres_prod
+    environment:
+      POSTGRES_DB: realestate_ai
+      POSTGRES_USER: realestate
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-realestate_prod}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U realestate -d realestate_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: realestate_redis_prod
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+  media_prod_data:

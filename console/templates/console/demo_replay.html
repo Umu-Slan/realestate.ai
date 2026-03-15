@@ -1,0 +1,79 @@
+{% extends "console/base.html" %}
+{% block title %}Replay {{ scenario.name }}{% endblock %}
+{% block content %}
+<div class="mb-4">
+  <a href="{% url 'console:demo_eval' %}" class="text-blue-600 hover:underline">← Demo Eval</a>
+</div>
+
+<div class="bg-white rounded shadow p-4 mb-4">
+  <h2 class="font-semibold mb-2">Scenario: {{ scenario.name }} ({{ scenario.scenario_type }})</h2>
+  <div class="text-sm text-gray-600 mb-2">Messages:</div>
+  <div class="space-y-2 max-h-40 overflow-y-auto">
+    {% for m in scenario.messages %}
+    <div class="p-2 rounded {% if m.role == 'user' %}bg-blue-50{% else %}bg-gray-50{% endif %}">
+      <span class="text-xs text-gray-500">{{ m.role }}:</span> {{ m.content|truncatewords:30 }}
+    </div>
+    {% endfor %}
+  </div>
+  {% if not run_result %}
+  <a href="?run=1" class="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Run Scenario</a>
+  {% else %}
+  <a href="?run=1" class="mt-4 inline-block px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Re-run</a>
+  {% endif %}
+</div>
+
+{% if run_result %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  <div class="bg-white rounded shadow p-4">
+    <h2 class="font-semibold mb-2">Actual Output</h2>
+    {% if run_result.error %}
+    <p class="text-red-600">{{ run_result.error }}</p>
+    {% else %}
+    <dl class="text-sm space-y-1">
+      <dt class="text-gray-500">Customer type</dt><dd>{{ run_result.actual.customer_type|default:"—" }}</dd>
+      <dt class="text-gray-500">Intent</dt><dd>{{ run_result.actual.intent|default:"—" }}</dd>
+      <dt class="text-gray-500">Temperature</dt><dd>{{ run_result.actual.temperature|default:"—" }}</dd>
+      <dt class="text-gray-500">Support category</dt><dd>{{ run_result.actual.support_category|default:"—" }}</dd>
+      <dt class="text-gray-500">Route</dt><dd>{{ run_result.actual.route|default:"—" }}</dd>
+      <dt class="text-gray-500">Escalation</dt><dd>{{ run_result.actual.escalation|yesno:"Yes,No" }}</dd>
+      <dt class="text-gray-500">Next action</dt><dd>{{ run_result.actual.next_action|default:"—" }}</dd>
+      <dt class="text-gray-500">Run time</dt><dd>{{ run_result.run_time_ms }}ms</dd>
+    </dl>
+    {% endif %}
+  </div>
+  <div class="bg-white rounded shadow p-4">
+    <h2 class="font-semibold mb-2">Expected vs Actual</h2>
+    <dl class="text-sm space-y-1">
+      <dt class="text-gray-500">Customer type</dt><dd>Expected: {{ run_result.expected.customer_type|default:"—" }} / Actual: {{ run_result.actual.customer_type|default:"—" }}</dd>
+      <dt class="text-gray-500">Intent</dt><dd>Expected: {{ run_result.expected.intent|default:"—" }} / Actual: {{ run_result.actual.intent|default:"—" }}</dd>
+      <dt class="text-gray-500">Temperature</dt><dd>Expected: {{ run_result.expected.temperature|default:"—" }} / Actual: {{ run_result.actual.temperature|default:"—" }}</dd>
+      <dt class="text-gray-500">Route</dt><dd>Expected: {{ run_result.expected.route|default:"—" }} / Actual: {{ run_result.actual.route|default:"—" }}</dd>
+      <dt class="text-gray-500">Escalation</dt><dd>Expected: {{ run_result.expected.escalation|yesno:"Yes,No" }} / Actual: {{ run_result.actual.escalation|yesno:"Yes,No" }}</dd>
+    </dl>
+    <div class="mt-2">
+      {% if run_result.passed %}
+      <span class="px-2 py-1 bg-green-100 text-green-800 rounded">PASS</span>
+      {% else %}
+      <span class="px-2 py-1 bg-red-100 text-red-800 rounded">FAIL</span>
+      <ul class="mt-2 text-sm text-red-700">
+        {% for f in run_result.failures %}
+        <li>{{ f }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="mt-4 bg-white rounded shadow p-4">
+  <h2 class="font-semibold mb-2">Final Response</h2>
+  <div class="p-2 bg-gray-50 rounded text-sm">{{ run_result.actual.final_response|default:"—" }}</div>
+</div>
+{% if run_result.qualification_json %}
+<div class="mt-2 bg-white rounded shadow p-4">
+  <h2 class="font-semibold mb-2">Qualification (extracted)</h2>
+  <pre class="text-xs bg-gray-50 p-2 overflow-x-auto">{{ run_result.qualification_json }}</pre>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

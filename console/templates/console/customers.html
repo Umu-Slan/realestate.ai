@@ -1,0 +1,40 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Customers" %}{% endblock %}
+{% block content %}
+<div class="mb-8">
+  <h1 class="text-2xl font-bold text-slate-800">{% trans "Customers" %}</h1>
+  <p class="text-slate-500 text-sm mt-1">{% trans "All customers and leads from conversations." %}</p>
+</div>
+{% if customers %}
+<div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+  <table class="min-w-full divide-y divide-slate-200">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="px-6 py-3 text-start text-xs font-medium text-slate-500 uppercase">ID</th>
+        <th class="px-6 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Name / External ID" %}</th>
+        <th class="px-6 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Type" %}</th>
+        <th class="px-6 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Channel" %}</th>
+        <th class="px-6 py-3 text-start text-xs font-medium text-slate-500 uppercase"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-200">
+      {% for c in customers %}
+      <tr class="hover:bg-slate-50">
+        <td class="px-6 py-4 text-sm font-medium text-slate-900">{{ c.id }}</td>
+        <td class="px-6 py-4 text-sm text-slate-700">{% if c.identity %}{{ c.identity.name|default:c.identity.external_id|default:"—" }}{% else %}—{% endif %}</td>
+        <td class="px-6 py-4"><span class="px-2 py-0.5 rounded text-xs {% if c.customer_type == 'new_lead' %}bg-slate-100 text-slate-700{% elif c.customer_type == 'existing_customer' %}bg-teal-100 text-teal-800{% else %}bg-amber-100 text-amber-800{% endif %}">{{ c.customer_type }}</span></td>
+        <td class="px-6 py-4"><span class="px-2 py-0.5 rounded text-xs bg-slate-100">{{ c.source_channel }}</span></td>
+        <td class="px-6 py-4"><a href="{% url 'console:customer_detail' c.id %}" class="text-teal-600 font-medium hover:underline">{% trans "Profile" %} →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+{% trans "No customers yet" as no_cust_title %}
+{% trans "Customers and leads are created when conversations start. Start a test chat to create your first customer." as no_cust_msg %}
+{% trans "Start test chat" as action_label %}
+{% include "console/includes/empty_state.html" with title=no_cust_title message=no_cust_msg icon="users" action_url="/api/engines/demo/" action_label=action_label %}
+{% endif %}
+{% endblock %}

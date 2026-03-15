@@ -1,0 +1,74 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Knowledge" %}{% endblock %}
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+  <h1 class="text-2xl font-bold text-slate-800">{% trans "Knowledge Documents" %}</h1>
+  <a href="{% url 'onboarding:upload_documents' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+    {% trans "Upload documents" %}
+  </a>
+</div>
+
+<div class="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-wrap gap-4 items-center">
+  <form method="get" class="flex flex-wrap gap-3 items-center">
+    <select name="document_type" class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm">
+      <option value="">{% trans "All types" %}</option>
+      {% for value, label in document_types %}
+      <option value="{{ value }}" {% if request.GET.document_type == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="access_level" class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm">
+      <option value="">{% trans "All access" %}</option>
+      {% for value, label in access_levels %}
+      <option value="{{ value }}" {% if request.GET.access_level == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="verification_status" class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm">
+      {% for value, label in verification_statuses %}
+      <option value="{{ value }}" {% if request.GET.verification_status == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="px-3 py-1.5 bg-teal-100 rounded-lg text-sm hover:bg-teal-200 font-medium">{% trans "Filter" %}</button>
+    <a href="{% url 'console:knowledge' %}" class="text-sm text-teal-600 hover:underline">{% trans "Clear" %}</a>
+  </form>
+</div>
+
+{% if documents %}
+<div class="space-y-4">
+  {% for d in documents %}
+  <div class="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition">
+    <div class="flex items-start justify-between gap-4">
+      <div class="min-w-0 flex-1">
+        <a href="{% url 'console:knowledge_doc_detail' d.id %}" class="font-medium text-slate-800 hover:text-teal-600">{{ d.title|truncatechars:60 }}</a>
+        <div class="flex flex-wrap gap-2 mt-2">
+          <span class="px-2 py-0.5 rounded text-xs bg-slate-100">{{ d.document_type }}</span>
+          <span class="px-2 py-0.5 rounded text-xs {% if d.status == 'indexed' %}bg-green-100 text-green-800{% elif d.status == 'processing' %}bg-amber-100 text-amber-800{% else %}bg-slate-100 text-slate-700{% endif %}">{{ d.status }}</span>
+          <span class="text-xs text-slate-500">v{{ d.version }}</span>
+          <span class="text-xs text-slate-500">{{ d._chunk_count|default:0 }} {% trans "chunks" %}</span>
+          {% if d.source_of_truth %}<span class="px-1.5 py-0.5 rounded text-xs bg-teal-100 text-teal-800">{% trans "Source of truth" %}</span>{% endif %}
+        </div>
+        {% if d.verification_status %}<p class="text-xs text-slate-500 mt-1">{% trans "Verification" %}: {{ d.verification_status }}</p>{% endif %}
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        {% if d._is_fresh %}<span class="text-green-600" title="{% trans 'Fresh' %}">&#10003;</span>{% else %}<span class="text-amber-600">&#9675;</span>{% endif %}
+        <a href="{% url 'console:knowledge_doc_detail' d.id %}" class="px-3 py-1.5 text-sm bg-teal-100 text-teal-800 rounded-lg hover:bg-teal-200">{% trans "View" %}</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+{% trans "No documents yet" as no_doc_title %}
+{% trans "Upload brochures, FAQs, and project docs so the AI can answer customer questions accurately." as no_doc_msg %}
+{% trans "Upload documents" as action_label %}
+{% url 'onboarding:upload_documents' as upload_url %}
+{% include "console/includes/empty_state.html" with title=no_doc_title message=no_doc_msg icon="documents" action_url=upload_url action_label=action_label %}
+{% endif %}
+
+<div class="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+  <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "Retrieval Policy" %}</h2>
+  <p class="text-sm text-slate-600 mb-2">{% trans "Exact pricing and availability are sourced only from the Project model, not from document chunks. Chunks are for descriptive content; unverified docs trigger safe fallback language." %}</p>
+  <p class="text-sm text-slate-600">{% trans "Test retrieval via API: POST /api/intelligence/analyze/ or use the chat." %}</p>
+</div>
+{% endblock %}

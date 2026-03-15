@@ -1,0 +1,56 @@
+{% extends "console/base.html" %}
+{% block title %}Support Case {{ case.id }}{% endblock %}
+{% block content %}
+<nav class="mb-6">
+  <a href="{% url 'console:support_cases' %}" class="text-sm text-teal-600 hover:underline">← Back to Support Cases</a>
+</nav>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 space-y-6">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-lg font-semibold text-slate-800 mb-4">Case #{{ case.id }}</h2>
+      <dl class="grid grid-cols-2 gap-3 text-sm">
+        <div><dt class="text-slate-500">Category</dt><dd><span class="px-2 py-0.5 rounded text-xs bg-slate-100">{{ case.get_category_display|default:case.category }}</span></dd></div>
+        <div><dt class="text-slate-500">Status</dt><dd><span class="badge-{% if case.status == 'open' %}open{% elif case.status == 'in_progress' %}in-progress{% else %}resolved{% endif %} px-2 py-0.5 rounded text-xs">{{ case.get_status_display|default:case.status }}</span></dd></div>
+        <div><dt class="text-slate-500">Severity</dt><dd><span class="badge-{% if case.severity == 'critical' %}critical{% elif case.severity == 'high' %}high{% elif case.severity == 'medium' %}medium{% else %}low{% endif %} px-2 py-0.5 rounded text-xs">{{ case.get_severity_display|default:case.severity|default:"—" }}</span></dd></div>
+        <div><dt class="text-slate-500">SLA Bucket</dt><dd>{{ case.get_sla_bucket_display|default:case.sla_bucket|default:"—" }}</dd></div>
+        <div><dt class="text-slate-500">Assigned Queue</dt><dd>{{ case.assigned_queue|default:"—" }}</dd></div>
+        <div><dt class="text-slate-500">Escalation Trigger</dt><dd>{{ case.escalation_trigger|default:"—" }}</dd></div>
+        <div><dt class="text-slate-500">Created</dt><dd>{{ case.created_at|date:"Y-m-d H:i" }}</dd></div>
+        <div><dt class="text-slate-500">Updated</dt><dd>{{ case.updated_at|date:"Y-m-d H:i" }}</dd></div>
+      </dl>
+      {% if case.summary %}
+      <div class="mt-4 pt-4 border-t border-slate-200">
+        <dt class="text-slate-500 text-xs">Summary</dt>
+        <dd class="mt-1">{{ case.summary }}</dd>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-lg font-semibold text-slate-800 mb-4">Links</h2>
+      <ul class="space-y-2 text-sm">
+        {% if case.customer %}
+        <li><a href="{% url 'console:customer_detail' case.customer.id %}" class="text-teal-600 hover:underline font-medium">Customer {{ case.customer.id }}</a> — {{ case.customer.identity.name|default:"—" }}</li>
+        {% endif %}
+        {% if case.conversation %}
+        <li><a href="{% url 'console:conversation_detail' case.conversation.id %}" class="text-teal-600 hover:underline font-medium">Conversation {{ case.conversation.id }}</a></li>
+        {% endif %}
+        {% if case.escalation %}
+        <li><a href="{% url 'console:escalation_detail' case.escalation.id %}" class="text-teal-600 hover:underline font-medium">Escalation {{ case.escalation.id }}</a> — {{ case.escalation.reason }} ({{ case.escalation.status }})</li>
+        {% endif %}
+        {% if not case.customer and not case.conversation and not case.escalation %}
+        <li class="text-slate-500 text-sm">No linked entities.</li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <h2 class="text-sm font-semibold text-slate-800 mb-3">Metadata</h2>
+      <pre class="text-xs overflow-x-auto bg-slate-50 p-3 rounded-lg text-slate-700">{{ metadata_json }}</pre>
+    </div>
+  </div>
+</div>
+{% endblock %}
