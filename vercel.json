@@ -2,14 +2,12 @@
   "version": 2,
   "builds": [
     {
+      "src": "public/**",
+      "use": "@vercel/static"
+    },
+    {
       "src": "api/index.py",
       "use": "@vercel/python"
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/api/engines/demo/"
     }
   ],
   "routes": [
