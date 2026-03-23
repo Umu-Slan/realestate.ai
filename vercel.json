@@ -11,5 +11,12 @@
       "src": "/(.*)",
       "dest": "api/index.py"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/api/engines/demo/",
+      "permanent": false
+    }
   ]
 }
