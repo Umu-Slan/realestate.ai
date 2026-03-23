@@ -6,16 +6,17 @@
       "use": "@vercel/python"
     }
   ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/api/engines/demo/",
+      "permanent": false
+    }
+  ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "api/index.py"
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/api/engines/demo/"
+      "dest": "/api/index.py"
     }
   ]
 }
