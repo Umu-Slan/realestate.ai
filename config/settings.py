@@ -1,6 +1,7 @@
 """
 Django settings for Real Estate AI System v0.
 """
+import os
 from pathlib import Path
 
 import environ
@@ -21,7 +22,10 @@ SECRET_KEY = env("SECRET_KEY", default="dev-secret-key-change-in-production")
 _django_env = env("DJANGO_ENV")
 _unsafe_secret = SECRET_KEY in ("dev-secret-key-change-in-production", "change-this-in-production")
 DEBUG = False if (_django_env == "production" or _unsafe_secret) else env("DEBUG")
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "testserver"])
+_allowed = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "testserver"])
+if env.bool("VERCEL", default=False):
+    _allowed.extend([".vercel.app", os.environ.get("VERCEL_URL", "")])
+ALLOWED_HOSTS = list(dict.fromkeys(h for h in _allowed if h))
 
 INSTALLED_APPS = [
     "django.contrib.admin",
