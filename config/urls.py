@@ -1,12 +1,16 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.shortcuts import redirect
 from django.urls import path, include
-from django.views.generic import RedirectView
 from django.views.i18n import set_language
 
+def root_redirect(request):
+    """Redirect / to demo page (works reliably on Vercel serverless)."""
+    return redirect("/api/engines/demo/", permanent=False)
+
 urlpatterns = [
-    path("", RedirectView.as_view(url="/api/engines/demo/", permanent=False)),
+    path("", root_redirect),
     path("i18n/setlang/", set_language, name="set_language"),
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
