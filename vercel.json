@@ -12,11 +12,10 @@
       "dest": "api/index.py"
     }
   ],
-  "redirects": [
+  "rewrites": [
     {
       "source": "/",
-      "destination": "/api/engines/demo/",
-      "permanent": false
+      "destination": "/api/engines/demo/"
     }
   ]
 }
