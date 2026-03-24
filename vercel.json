@@ -19,7 +19,7 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/((?!static/).*)",
       "dest": "/api/index.py"
     }
   ]
