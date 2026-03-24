@@ -409,12 +409,78 @@ def escalation_detail(request, pk):
     })
 
 
+def _ensure_recommendation_samples():
+    """Create sample recommendations when table is empty (e.g. fresh deploy)."""
+    if Recommendation.objects.exists():
+        return
+    from companies.services import ensure_default_company
+    from core.enums import SourceChannel
+
+    company = ensure_default_company()
+    projects = list(Project.objects.filter(company=company, is_active=True)[:2])
+    if not projects:
+        projects = [
+            Project.objects.get_or_create(name="مشروع النخيل", company=company, defaults={"location": "القاهرة الجديدة", "price_min": 2500000, "price_max": 8000000})[0],
+            Project.objects.get_or_create(name="مشروع الريف", company=company, defaults={"location": "6 أكتوبر", "price_min": 1500000, "price_max": 4000000})[0],
+        ]
+    customers = list(Customer.objects.filter(company=company, is_active=True).select_related("identity")[:5])
+    if not customers:
+        for i, (ext_id, name, email) in enumerate([
+            ("rec_sample_1", "أحمد محمد", "ahmed.sample@demo.local"),
+            ("rec_sample_2", "سارة علي", "sara.sample@demo.local"),
+            ("rec_sample_3", "خالد حسن", "khalid.sample@demo.local"),
+        ]):
+            identity, _ = CustomerIdentity.objects.get_or_create(external_id=ext_id, defaults={"name": name, "email": email})
+            cust, _ = Customer.objects.get_or_create(identity=identity, company=company, defaults={"source_channel": SourceChannel.DEMO})
+            customers.append(cust)
+    conv = None
+    if customers:
+        conv = Conversation.objects.filter(customer=customers[0], company=company).first()
+        if not conv:
+            conv = Conversation.objects.create(customer=customers[0], company=company)
+    samples = [
+        {"rationale": "مناسب للميزانية والموقع المطلوب", "confidence": 0.88, "reasons": ["مطابق للميزانية", "الموقع المفضل", "وحدات عائلية"]},
+        {"rationale": "توافق جيد مع خطط الدفع والتقسيط", "confidence": 0.82, "reasons": ["خطط تقسيط مناسبة", "قرب من الخدمات"]},
+        {"rationale": "مشروع مميز للاستثمار - عائد متوقع جيد", "confidence": 0.75, "reasons": ["موقع استراتيجي", "طلب عالي"],
+         "tradeoffs": ["التسليم خلال ١٨ شهراً"]},
+        {"rationale": "وحدات بمساحات متعددة تناسب الاحتياجات", "confidence": 0.91, "reasons": ["تنوع المساحات", "تشطيب فائق"]},
+        {"rationale": "قيمة ممتازة ضمن النطاق السعري", "confidence": 0.78, "reasons": ["سعر تنافسي", "مرافق متكاملة"],
+         "tradeoffs": ["بعيد قليلاً عن المركز"]},
+    ]
+    for i, s in enumerate(samples):
+        cust = customers[i % len(customers)]
+        proj = projects[i % len(projects)]
+        rec_conv = Conversation.objects.filter(customer=cust, company=company).first() or conv
+        Recommendation.objects.create(
+            customer=cust,
+            conversation=rec_conv,
+            project=proj,
+            rationale=s["rationale"],
+            rank=i + 1,
+            metadata={
+                "confidence": s["confidence"],
+                "match_reasons": s["reasons"],
+                "why_it_matches": s["reasons"],
+                "tradeoffs": s.get("tradeoffs", []),
+            },
+        )
+
+
 def recommendations_view(request):
-    recs = (
+    _ensure_recommendation_samples()
+    recs = list(
         Recommendation.objects
         .select_related("customer", "customer__identity", "project", "conversation")
         .order_by("-created_at")[:100]
     )
+    # Normalize metadata so template never hits KeyError (some seeds omit metadata keys)
+    for r in recs:
+        m = r.metadata if isinstance(r.metadata, dict) else {}
+        r.display_meta = {
+            "confidence": m.get("confidence"),
+            "match_reasons": m.get("why_it_matches") or m.get("match_reasons") or m.get("top_reasons") or [],
+            "tradeoffs": m.get("tradeoffs") or m.get("trade_offs") or [],
+        }
     return render(request, "console/recommendations.html", {
         "recommendations": recs,
         "nav_section": "recommendations",

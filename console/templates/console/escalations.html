@@ -39,7 +39,7 @@
         <td class="px-6 py-4"><span class="badge-{% if e.status == 'open' %}open{% elif e.status == 'in_progress' %}in-progress{% else %}resolved{% endif %} px-2 py-0.5 rounded text-xs">{{ e.get_status_display|default:e.status }}</span></td>
         <td class="px-6 py-4 text-sm text-slate-600 max-w-xs truncate">
           {% if e.handoff_summary %}
-          {{ e.handoff_summary.intent_summary|default:e.handoff_summary.intent.primary|default:e.handoff_summary.recommended_next_step|default:"—" }}
+          {{ e.handoff_summary.intent_summary|default:e.handoff_summary.recommended_next_step|default:"—" }}
           {% else %}
           —
           {% endif %}

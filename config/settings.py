@@ -21,7 +21,8 @@ SECRET_KEY = env("SECRET_KEY", default="dev-secret-key-change-in-production")
 # Safe DEBUG: force False when SECRET_KEY is dev default or DJANGO_ENV=production
 _django_env = env("DJANGO_ENV")
 _unsafe_secret = SECRET_KEY in ("dev-secret-key-change-in-production", "change-this-in-production")
-DEBUG = False if (_django_env == "production" or _unsafe_secret) else env("DEBUG")
+# Only force DEBUG=False in production; locally respect .env DEBUG
+DEBUG = False if (_django_env == "production") else env("DEBUG")
 _allowed = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "testserver"])
 # Vercel: allow all *.vercel.app deployment URLs (preview + production)
 _is_vercel = os.environ.get("VERCEL") == "1" or env.bool("VERCEL", default=False)

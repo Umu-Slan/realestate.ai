@@ -97,7 +97,7 @@ class Command(BaseCommand):
                         user_msg = None
 
                 self._create_lead_data(customer, conv, idx)
-                self._create_support_if_needed(customer, conv, idx)
+                self._create_support_if_needed(customer, idx)
                 self._create_escalation_if_needed(customer, conv, idx)
                 self._create_recommendations(customer, conv, projects)
                 self._create_action_logs(conv)
