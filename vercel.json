@@ -11,14 +11,10 @@
       "use": "@vercel/python"
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/",
-      "destination": "/api/engines/demo/"
-    },
-    {
-      "source": "/((?!static/).*)",
-      "destination": "/api/index"
+      "src": "/((?!static/).*)",
+      "dest": "api/index.py"
     }
   ]
 }
