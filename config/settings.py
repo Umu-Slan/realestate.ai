@@ -105,6 +105,12 @@ DATABASES = {
         default="postgresql://realestate_dev:realestate_dev_pass@localhost:5433/realestate_ai",
     )
 }
+# Vercel serverless + Neon: no pooled connections across invocations; fail fast on connect
+if _is_vercel:
+    DATABASES["default"]["CONN_MAX_AGE"] = 0
+    _db_opts = DATABASES["default"].setdefault("OPTIONS", {})
+    if "connect_timeout" not in _db_opts:
+        _db_opts["connect_timeout"] = 10
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -144,6 +150,10 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_SAVE_EVERY_REQUEST = False
+# Vercel: default DB-backed sessions write after every response; Neon latency/timeouts → 500.
+# Signed cookies avoid a second DB round-trip after the view returns.
+if _is_vercel:
+    SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 CSRF_COOKIE_HTTPONLY = False  # JS needs to read for AJAX
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = not DEBUG
