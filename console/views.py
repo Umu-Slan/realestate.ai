@@ -467,11 +467,32 @@ def _ensure_recommendation_samples():
 
 
 def recommendations_view(request):
-    # Minimal response for Vercel - no DB, no template
-    return HttpResponse(
-        "<h1>Recommendations</h1><p>Page OK. DB/template next.</p>",
-        content_type="text/html",
-    )
+    import os
+    recs = []
+    try:
+        if os.environ.get("VERCEL") != "1":
+            _ensure_recommendation_samples()
+        recs = list(
+            Recommendation.objects
+            .select_related("customer", "customer__identity", "project", "conversation")
+            .order_by("-created_at")[:20]
+        )
+        for r in recs:
+            m = r.metadata if isinstance(r.metadata, dict) else {}
+            r.display_meta = {
+                "confidence": m.get("confidence"),
+                "match_reasons": m.get("why_it_matches") or m.get("match_reasons") or m.get("top_reasons") or [],
+                "tradeoffs": m.get("tradeoffs") or m.get("trade_offs") or [],
+            }
+        return render(request, "console/recommendations.html", {
+            "recommendations": recs,
+            "nav_section": "recommendations",
+        })
+    except Exception as e:
+        return HttpResponse(
+            f"<h2>Recommendations</h2><p>Error: {type(e).__name__}: {e}</p>",
+            content_type="text/html",
+        )
 
 
 def knowledge(request):

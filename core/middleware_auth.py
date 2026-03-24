@@ -25,8 +25,6 @@ def _path_requires_auth(path: str) -> bool:
         return False
     if path.startswith("/health/"):
         return False
-    if path.startswith("/ping/"):
-        return False
     if path.startswith("/api/engines/"):
         return False  # Public chat
     if path.startswith("/api/channels/"):

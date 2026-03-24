@@ -15,12 +15,10 @@
     {
       "source": "/",
       "destination": "/api/engines/demo/"
-    }
-  ],
-  "routes": [
+    },
     {
-      "src": "/((?!static/).*)",
-      "dest": "/api/index.py"
+      "source": "/((?!static/).*)",
+      "destination": "/api/index"
     }
   ]
 }
