@@ -3,7 +3,7 @@
   "buildCommand": "python manage.py collectstatic --noinput",
   "builds": [
     {
-      "src": "staticfiles/**",
+      "src": "public/**",
       "use": "@vercel/static"
     },
     {
