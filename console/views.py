@@ -467,20 +467,23 @@ def _ensure_recommendation_samples():
 
 
 def recommendations_view(request):
-    _ensure_recommendation_samples()
-    recs = list(
-        Recommendation.objects
-        .select_related("customer", "customer__identity", "project", "conversation")
-        .order_by("-created_at")[:100]
-    )
-    # Normalize metadata so template never hits KeyError (some seeds omit metadata keys)
-    for r in recs:
-        m = r.metadata if isinstance(r.metadata, dict) else {}
-        r.display_meta = {
-            "confidence": m.get("confidence"),
-            "match_reasons": m.get("why_it_matches") or m.get("match_reasons") or m.get("top_reasons") or [],
-            "tradeoffs": m.get("tradeoffs") or m.get("trade_offs") or [],
-        }
+    recs = []
+    try:
+        _ensure_recommendation_samples()
+        recs = list(
+            Recommendation.objects
+            .select_related("customer", "customer__identity", "project", "conversation")
+            .order_by("-created_at")[:100]
+        )
+        for r in recs:
+            m = r.metadata if isinstance(r.metadata, dict) else {}
+            r.display_meta = {
+                "confidence": m.get("confidence"),
+                "match_reasons": m.get("why_it_matches") or m.get("match_reasons") or m.get("top_reasons") or [],
+                "tradeoffs": m.get("tradeoffs") or m.get("trade_offs") or [],
+            }
+    except Exception:
+        recs = []
     return render(request, "console/recommendations.html", {
         "recommendations": recs,
         "nav_section": "recommendations",
