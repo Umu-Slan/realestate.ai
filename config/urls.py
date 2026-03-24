@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import path, include
 from django.views.i18n import set_language
@@ -9,7 +10,12 @@ def root_redirect(request):
     """Redirect / to demo page (works reliably on Vercel serverless)."""
     return redirect("/api/engines/demo/", permanent=False)
 
+def ping(_request):
+    """Minimal test - no auth, no DB, no console."""
+    return HttpResponse("pong", content_type="text/plain")
+
 urlpatterns = [
+    path("ping/", ping),
     path("", root_redirect),
     path("i18n/setlang/", set_language, name="set_language"),
     path("admin/", admin.site.urls),

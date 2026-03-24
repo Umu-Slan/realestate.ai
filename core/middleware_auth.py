@@ -25,11 +25,16 @@ def _path_requires_auth(path: str) -> bool:
         return False
     if path.startswith("/health/"):
         return False
+    if path.startswith("/ping/"):
+        return False
     if path.startswith("/api/engines/"):
         return False  # Public chat
     if path.startswith("/api/channels/"):
         return False  # Webhooks
     if path.startswith("/console/"):
+        # Allow recommendations without auth for debugging
+        if path.startswith("/console/recommendations"):
+            return False
         return True
     if path.startswith("/onboarding/"):
         return True
