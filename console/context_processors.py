@@ -8,15 +8,12 @@ def console_stats(request):
     base = {"stats": {"escalations_open": 0}, "company_name": None}
     if not request.user.is_authenticated:
         return base
-    company = None
     try:
         from companies.services import get_default_company
         company = get_default_company()
+        return {
+            "stats": {"escalations_open": Escalation.objects.filter(status=EscalationStatus.OPEN).count()},
+            "company_name": company.name if company else None,
+        }
     except Exception:
-        pass
-    return {
-        "stats": {
-            "escalations_open": Escalation.objects.filter(status=EscalationStatus.OPEN).count(),
-        },
-        "company_name": company.name if company else None,
-    }
+        return base

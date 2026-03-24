@@ -467,13 +467,16 @@ def _ensure_recommendation_samples():
 
 
 def recommendations_view(request):
+    import os
     recs = []
     try:
-        _ensure_recommendation_samples()
+        # Skip sample creation on Vercel (slow DB writes cause timeout)
+        if os.environ.get("VERCEL") != "1":
+            _ensure_recommendation_samples()
         recs = list(
             Recommendation.objects
             .select_related("customer", "customer__identity", "project", "conversation")
-            .order_by("-created_at")[:100]
+            .order_by("-created_at")[:20]
         )
         for r in recs:
             m = r.metadata if isinstance(r.metadata, dict) else {}
