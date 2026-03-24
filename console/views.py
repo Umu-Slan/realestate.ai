@@ -1,6 +1,6 @@
 """Operator console views."""
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.decorators import admin_required
@@ -482,12 +482,15 @@ def recommendations_view(request):
                 "match_reasons": m.get("why_it_matches") or m.get("match_reasons") or m.get("top_reasons") or [],
                 "tradeoffs": m.get("tradeoffs") or m.get("trade_offs") or [],
             }
-    except Exception:
-        recs = []
-    return render(request, "console/recommendations.html", {
-        "recommendations": recs,
-        "nav_section": "recommendations",
-    })
+        return render(request, "console/recommendations.html", {
+            "recommendations": recs,
+            "nav_section": "recommendations",
+        })
+    except Exception as e:
+        return HttpResponse(
+            f"<h2>Recommendations Debug</h2><pre>{type(e).__name__}: {e}</pre>",
+            content_type="text/html",
+        )
 
 
 def knowledge(request):
