@@ -2,6 +2,10 @@
 Console analytics tests - metrics and aggregations from persisted data.
 """
 import pytest
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+
+from accounts.models import Role, UserProfile
 from leads.models import CustomerIdentity, Customer, LeadScore
 from conversations.models import Conversation, Message
 from support.models import SupportCase, Escalation
@@ -20,6 +24,8 @@ from core.enums import (
     EscalationReason,
     SupportCategory,
 )
+
+User = get_user_model()
 
 
 @pytest.fixture
@@ -389,3 +395,33 @@ def test_conversation_detail_includes_operator_assist(client):
     resp = client.get(reverse("console:conversation_detail", args=[conv.id]))
     assert resp.status_code == 200
     assert b"Operator Assist" in resp.content or b"operator" in resp.content.lower()
+
+
+@pytest.fixture
+def console_user():
+    u = User.objects.create_user(username="console_tester", password="test")
+    UserProfile.objects.create(user=u, role=Role.OPERATOR)
+    return u
+
+
+@pytest.mark.django_db
+def test_lead_scoring_list_and_export(client, customer_web, console_user):
+    """Lead scoring page lists customers by latest score; CSV export matches filters."""
+    LeadScore.objects.create(
+        customer=customer_web,
+        score=82,
+        temperature=LeadTemperature.HOT.value,
+    )
+    client.force_login(console_user)
+    resp = client.get(reverse("console:lead_scoring"))
+    assert resp.status_code == 200
+    assert customer_web.identity.external_id.encode() in resp.content
+
+    resp_cold = client.get(reverse("console:lead_scoring"), {"temp": "cold"})
+    assert resp_cold.status_code == 200
+    assert customer_web.identity.external_id.encode() not in resp_cold.content
+
+    csv_resp = client.get(reverse("console:lead_scoring_export"))
+    assert csv_resp.status_code == 200
+    assert b"customer_id" in csv_resp.content
+    assert str(customer_web.id).encode() in csv_resp.content

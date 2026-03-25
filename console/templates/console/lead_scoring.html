@@ -1,0 +1,136 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Lead scoring" %}{% endblock %}
+{% block content %}
+<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-800">{% trans "Lead scoring" %}</h1>
+    <p class="text-slate-500 text-sm mt-1">{% trans "Latest score per customer. Filters apply to the most recent score only." %}</p>
+  </div>
+  <a href="{% url 'console:lead_scoring_export' %}?{{ request.GET.urlencode }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 transition shrink-0">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+    {% trans "Export CSV" %}
+  </a>
+</div>
+
+<div class="mb-8">
+  <h2 class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">{% blocktrans with days=kpi_days %}Score events in the last {{ days }} days{% endblocktrans %}</h2>
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    {% for row in kpi_rows %}
+    <div class="bg-white rounded-xl border border-slate-200 px-4 py-3">
+      <p class="text-xs text-slate-500 truncate" title="{{ row.label }}">{{ row.label }}</p>
+      <p class="text-lg font-semibold text-slate-800 mt-0.5">{{ row.count }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<form method="get" class="bg-white rounded-xl border border-slate-200 p-4 mb-6 flex flex-col lg:flex-row flex-wrap gap-3 lg:items-end">
+  <div class="flex-1 min-w-[12rem]">
+    <label for="id_q" class="block text-xs font-medium text-slate-500 mb-1">{% trans "Search" %}</label>
+    <input type="search" name="q" id="id_q" value="{{ filter_q }}" placeholder="{% trans 'Name, email, phone, external ID' %}" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+  </div>
+  <div class="w-full sm:w-40">
+    <label for="id_temp" class="block text-xs font-medium text-slate-500 mb-1">{% trans "Temperature" %}</label>
+    <select name="temp" id="id_temp" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+      <option value="">{% trans "All" %}</option>
+      {% for val, label in temperature_choices %}
+      <option value="{{ val }}" {% if filter_temp == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="w-full sm:w-28">
+    <label for="id_min_score" class="block text-xs font-medium text-slate-500 mb-1">{% trans "Min score" %}</label>
+    <input type="number" name="min_score" id="id_min_score" value="{{ filter_min_score }}" min="0" max="100" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+  </div>
+  <div class="w-full sm:w-44">
+    <label for="id_sort" class="block text-xs font-medium text-slate-500 mb-1">{% trans "Sort" %}</label>
+    <select name="sort" id="id_sort" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+      <option value="score_desc" {% if filter_sort == "score_desc" %}selected{% endif %}>{% trans "Score (high first)" %}</option>
+      <option value="score_asc" {% if filter_sort == "score_asc" %}selected{% endif %}>{% trans "Score (low first)" %}</option>
+      <option value="recent" {% if filter_sort == "recent" %}selected{% endif %}>{% trans "Recently scored" %}</option>
+    </select>
+  </div>
+  <div class="flex gap-2">
+    <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition">{% trans "Apply" %}</button>
+    <a href="{% url 'console:lead_scoring' %}" class="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition">{% trans "Reset" %}</a>
+  </div>
+</form>
+
+{% if table_rows %}
+<div class="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8">
+  <div class="px-4 py-3 border-b border-slate-100 text-sm text-slate-500">
+    {% blocktrans with shown=shown_count total=total_matching %}{{ shown }} of {{ total }} customers shown{% endblocktrans %}
+    {% if total_matching > row_cap %}<span class="text-amber-600"> — {% trans "Refine filters to see more within the page cap." %}</span>{% endif %}
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-slate-200">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="px-4 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Customer" %}</th>
+          <th class="px-4 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Score" %}</th>
+          <th class="px-4 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Stage" %}</th>
+          <th class="px-4 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Next action" %}</th>
+          <th class="px-4 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Rules" %}</th>
+          <th class="px-4 py-3 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Scored" %}</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200">
+        {% for row in table_rows %}
+        {% with c=row.customer s=row.score %}
+        <tr class="hover:bg-slate-50">
+          <td class="px-4 py-3 text-sm">
+            {% if c.identity %}
+            <span class="font-medium text-slate-800">{{ c.identity.name|default:c.identity.external_id|default:"—" }}</span>
+            <p class="text-xs text-slate-500">#{{ c.id }} · {{ c.identity.external_id }}</p>
+            {% else %}
+            <span class="font-medium text-slate-800">#{{ c.id }}</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-sm">
+            {% if s %}
+            <span class="font-semibold text-slate-900">{{ s.score }}</span>
+            <span class="badge-{% if s.temperature == 'hot' %}hot{% elif s.temperature == 'warm' %}warm{% elif s.temperature == 'cold' %}cold{% else %}cold{% endif %} px-1.5 py-0.5 rounded text-xs ms-1">{{ s.temperature }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="px-4 py-3 text-sm text-slate-600">{% if s %}{{ s.get_journey_stage_display|default:s.journey_stage }}{% else %}—{% endif %}</td>
+          <td class="px-4 py-3 text-sm text-slate-600 max-w-xs truncate" title="{{ s.next_best_action }}">{% if s %}{{ s.next_best_action|default:"—" }}{% else %}—{% endif %}</td>
+          <td class="px-4 py-3 text-xs text-slate-500 font-mono">{% if s %}{{ s.rule_version }}{% else %}—{% endif %}</td>
+          <td class="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">{% if s %}{{ s.created_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</td>
+          <td class="px-4 py-3 text-end"><a href="{% url 'console:customer_detail' c.id %}" class="text-teal-600 text-sm font-medium hover:underline">{% trans "Profile" %}</a></td>
+        </tr>
+        {% endwith %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<p class="text-slate-500 text-sm mb-8">{% trans "No scored customers match your filters. Run conversations or scoring jobs to populate LeadScore records." %}</p>
+{% endif %}
+
+<div class="bg-white rounded-xl border border-slate-200 p-6">
+  <h2 class="text-lg font-semibold text-slate-800 mb-4">{% trans "Recent score events" %}</h2>
+  {% if recent_scores %}
+  <ul class="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+    {% for s in recent_scores %}
+    <li class="py-3 flex flex-wrap items-baseline justify-between gap-2 text-sm">
+      <span>
+        {% if s.customer.identity %}
+        <a href="{% url 'console:customer_detail' s.customer_id %}" class="text-teal-600 font-medium hover:underline">{{ s.customer.identity.name|default:s.customer.identity.external_id }}</a>
+        {% else %}
+        <a href="{% url 'console:customer_detail' s.customer_id %}" class="text-teal-600 font-medium hover:underline">{% trans "Customer" %} #{{ s.customer_id }}</a>
+        {% endif %}
+        <span class="text-slate-600 ms-2">{{ s.score }}</span>
+        <span class="badge-{% if s.temperature == 'hot' %}hot{% elif s.temperature == 'warm' %}warm{% else %}cold{% endif %} px-1.5 py-0.5 rounded text-xs ms-1">{{ s.temperature }}</span>
+      </span>
+      <span class="text-xs text-slate-400">{{ s.created_at|date:"Y-m-d H:i" }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-slate-500 text-sm">{% trans "No scores yet." %}</p>
+  {% endif %}
+</div>
+{% endblock %}

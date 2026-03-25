@@ -220,6 +220,12 @@ def run_canonical_pipeline_for_channel(
     channel = (normalized_msg.source_channel or "web").lower()
     customer, conversation = get_or_create_customer_conversation(normalized_msg)
     try:
+        from channels.attribution import apply_attribution_to_models
+
+        apply_attribution_to_models(customer, conversation, normalized_msg.metadata)
+    except Exception:
+        pass
+    try:
         from core.observability import log_inbound, bind_context
         log_inbound(
             channel=channel,

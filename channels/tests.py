@@ -31,6 +31,22 @@ def test_normalized_message_schema():
     assert params["phone"] == "+201012345678"
 
 
+def test_web_adapter_passes_utm_and_geo_metadata():
+    """Optional UTM / geo fields flow into metadata for attribution."""
+    adapter = WebChannelAdapter()
+    msg = adapter.normalize(
+        {
+            "content": "Hi",
+            "utm_source": "google",
+            "utm_medium": "cpc",
+            "utm_campaign": "brand_summer",
+            "city": "Alexandria",
+        }
+    )
+    assert msg.metadata.get("utm_campaign") == "brand_summer"
+    assert msg.metadata.get("city") == "Alexandria"
+
+
 def test_web_adapter_normalize():
     """Web adapter produces NormalizedInboundMessage from web payload."""
     adapter = WebChannelAdapter()

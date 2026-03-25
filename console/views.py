@@ -1,6 +1,12 @@
 """Operator console views."""
+import csv
+import json
+from datetime import timedelta
+
+from django.db.models import Count, OuterRef, Q, Subquery
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.decorators import admin_required
@@ -15,7 +21,7 @@ from knowledge.retrieval import RetrievalPolicy, retrieve_by_query, get_safe_fal
 from knowledge.services.structured_facts import get_project_structured_facts
 from audit.models import ActionLog, HumanCorrection
 from crm.models import CRMRecord
-from core.enums import EscalationStatus, CorrectionIssueType
+from core.enums import EscalationStatus, CorrectionIssueType, LeadTemperature
 
 
 def _stats():
@@ -182,6 +188,43 @@ def analytics(request):
     })
 
 
+def lead_intelligence(request):
+    """Campaign / geo / project / objection intelligence with charts and executive insights."""
+    from console.services.lead_intelligence import build_lead_intelligence_report
+
+    raw_days = (request.GET.get("days") or "30").strip()
+    try:
+        days = int(raw_days)
+    except ValueError:
+        days = 30
+    days = max(7, min(days, 365))
+    report = build_lead_intelligence_report(days=days)
+    charts_payload = json.dumps(
+        {
+            "channel_labels": report["chart_channel_labels"],
+            "channel_counts": report["chart_channel_counts"],
+            "campaign_labels": report["chart_campaign_labels"],
+            "campaign_avgs": report["chart_campaign_avgs"],
+            "objection_labels": report["chart_objections_labels"],
+            "objection_counts": report["chart_objections_counts"],
+            "project_labels": report["chart_project_labels"],
+            "project_scores": report["chart_project_scores"],
+        },
+        ensure_ascii=False,
+    )
+    return render(
+        request,
+        "console/lead_intelligence.html",
+        {
+            "report": report,
+            "charts_payload": charts_payload,
+            "days": days,
+            "stats": _stats(),
+            "nav_section": "lead_intelligence",
+        },
+    )
+
+
 def conversations(request):
     from django.db.models import Count, Q
     convs = (
@@ -316,11 +359,18 @@ def customer_detail(request, pk):
     cust_feedback = []
     if hasattr(cust, "response_feedback"):
         cust_feedback = list(cust.response_feedback.select_related("message", "conversation").order_by("-created_at")[:20])
+    score_list = list(scores)
+    scores_display = []
+    for i, s in enumerate(score_list):
+        prev_score = score_list[i + 1].score if i + 1 < len(score_list) else None
+        delta = (s.score - prev_score) if prev_score is not None else None
+        scores_display.append({"obj": s, "delta": delta})
     return render(request, "console/customer_detail.html", {
         "customer": cust,
         "timeline": timeline,
         "crm_records": crm_records,
         "scores": scores,
+        "scores_display": scores_display,
         "qualifications": qualifications,
         "conversations": convs,
         "support_cases": support_cases,
@@ -331,6 +381,165 @@ def customer_detail(request, pk):
         "feedback": cust_feedback,
         "nav_section": "customers",
     })
+
+
+_LEAD_SCORING_ROW_CAP = 250
+_LEAD_SCORING_EXPORT_CAP = 2000
+_LEAD_SCORING_KPI_DAYS = 30
+_VALID_LEAD_TEMPS = frozenset(c for c, _ in LeadTemperature.choices)
+
+
+def _parse_min_score(raw: str):
+    if not (raw or "").strip():
+        return None
+    try:
+        v = int(raw)
+        return max(0, min(100, v))
+    except ValueError:
+        return None
+
+
+def _lead_scoring_params(request):
+    q = (request.GET.get("q") or "").strip()[:100]
+    temp = (request.GET.get("temp") or "").strip().lower()
+    if temp not in _VALID_LEAD_TEMPS:
+        temp = ""
+    sort = (request.GET.get("sort") or "score_desc").strip()
+    if sort not in ("score_desc", "score_asc", "recent"):
+        sort = "score_desc"
+    min_score = _parse_min_score(request.GET.get("min_score") or "")
+    return q, temp, min_score, sort
+
+
+def _lead_scoring_queryset(q: str, temp: str, min_score: int | None, sort: str):
+    ls = LeadScore.objects.filter(customer_id=OuterRef("pk")).order_by("-created_at")
+    qs = (
+        Customer.objects.filter(is_active=True)
+        .select_related("identity")
+        .annotate(
+            latest_score_id=Subquery(ls.values("id")[:1]),
+            latest_score_value=Subquery(ls.values("score")[:1]),
+            latest_temperature=Subquery(ls.values("temperature")[:1]),
+            latest_journey_stage=Subquery(ls.values("journey_stage")[:1]),
+            latest_next_best_action=Subquery(ls.values("next_best_action")[:1]),
+            latest_score_at=Subquery(ls.values("created_at")[:1]),
+            latest_rule_version=Subquery(ls.values("rule_version")[:1]),
+        )
+        .filter(latest_score_id__isnull=False)
+    )
+    if q:
+        qs = qs.filter(
+            Q(identity__name__icontains=q)
+            | Q(identity__email__icontains=q)
+            | Q(identity__phone__icontains=q)
+            | Q(identity__external_id__icontains=q)
+        )
+    if temp:
+        qs = qs.filter(latest_temperature=temp)
+    if min_score is not None:
+        qs = qs.filter(latest_score_value__gte=min_score)
+    if sort == "score_asc":
+        qs = qs.order_by("latest_score_value", "-latest_score_at", "-id")
+    elif sort == "recent":
+        qs = qs.order_by("-latest_score_at", "-latest_score_value", "-id")
+    else:
+        qs = qs.order_by("-latest_score_value", "-latest_score_at", "-id")
+    return qs
+
+
+def lead_scoring(request):
+    q, temp, min_score, sort = _lead_scoring_params(request)
+    min_score_raw = (request.GET.get("min_score") or "").strip()[:10]
+    qs = _lead_scoring_queryset(q, temp, min_score, sort)
+    cust_rows = list(qs[:_LEAD_SCORING_ROW_CAP])
+    score_ids = [c.latest_score_id for c in cust_rows]
+    score_by_id = {s.id: s for s in LeadScore.objects.filter(id__in=score_ids)}
+    table_rows = [{"customer": c, "score": score_by_id.get(c.latest_score_id)} for c in cust_rows]
+
+    since = timezone.now() - timedelta(days=_LEAD_SCORING_KPI_DAYS)
+    temp_counts = {
+        row["temperature"]: row["n"]
+        for row in LeadScore.objects.filter(created_at__gte=since)
+        .values("temperature")
+        .annotate(n=Count("id"))
+    }
+    kpi_rows = [
+        {"key": key, "label": label, "count": temp_counts.get(key, 0)}
+        for key, label in LeadTemperature.choices
+    ]
+    recent_scores = list(
+        LeadScore.objects.select_related("customer", "customer__identity")
+        .order_by("-created_at")[:25]
+    )
+    return render(
+        request,
+        "console/lead_scoring.html",
+        {
+            "table_rows": table_rows,
+            "shown_count": len(table_rows),
+            "row_cap": _LEAD_SCORING_ROW_CAP,
+            "total_matching": qs.count(),
+            "filter_q": q,
+            "filter_temp": temp,
+            "filter_min_score": min_score_raw,
+            "filter_sort": sort,
+            "temperature_choices": LeadTemperature.choices,
+            "kpi_days": _LEAD_SCORING_KPI_DAYS,
+            "kpi_rows": kpi_rows,
+            "recent_scores": recent_scores,
+            "stats": _stats(),
+            "nav_section": "lead_scoring",
+        },
+    )
+
+
+def lead_scoring_export(request):
+    q, temp, min_score, sort = _lead_scoring_params(request)
+    qs = _lead_scoring_queryset(q, temp, min_score, sort)
+    cust_rows = list(qs[:_LEAD_SCORING_EXPORT_CAP])
+    score_ids = [c.latest_score_id for c in cust_rows]
+    score_by_id = {s.id: s for s in LeadScore.objects.filter(id__in=score_ids)}
+
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="lead_scoring_export.csv"'
+    response.write("\ufeff")
+    writer = csv.writer(response)
+    writer.writerow(
+        [
+            "customer_id",
+            "name",
+            "external_id",
+            "email",
+            "phone",
+            "score",
+            "temperature",
+            "journey_stage",
+            "next_best_action",
+            "rule_version",
+            "scored_at",
+        ]
+    )
+    for c in cust_rows:
+        s = score_by_id.get(c.latest_score_id)
+        if not s:
+            continue
+        ident = c.identity
+        writer.writerow(
+            [
+                c.id,
+                (ident.name if ident else "") or "",
+                (ident.external_id if ident else "") or "",
+                (ident.email if ident else "") or "",
+                (ident.phone if ident else "") or "",
+                s.score,
+                s.temperature,
+                s.journey_stage,
+                s.next_best_action,
+                s.rule_version,
+                s.created_at.isoformat() if s.created_at else "",
+            ]
+        )
+    return response
 
 
 def support_cases(request):

@@ -46,14 +46,37 @@
       </dl>
     </div>
     {% endif %}
-    {% if scores %}
+    {% if scores_display %}
     <div class="bg-white rounded-xl border border-slate-200 p-6">
       <h2 class="text-lg font-semibold text-slate-800 mb-4">{% trans "Lead Scores" %}</h2>
-      {% for s in scores %}
+      <p class="text-xs text-slate-500 mb-3"><a href="{% url 'console:lead_scoring' %}" class="text-teal-600 hover:underline">{% trans "Open lead scoring pipeline" %} →</a></p>
+      {% for item in scores_display %}
+      {% with s=item.obj %}
       <div class="mb-3 pb-3 {% if not forloop.last %}border-b border-slate-100{% endif %}">
-        <div class="font-semibold">{{ s.score }} <span class="badge-{% if s.temperature == 'hot' %}hot{% elif s.temperature == 'warm' %}warm{% else %}cold{% endif %} px-1.5 py-0.5 rounded text-xs">{{ s.temperature }}</span></div>
-        <div class="text-xs text-slate-500">{{ s.created_at|date:"Y-m-d H:i" }}</div>
+        <div class="font-semibold">{{ s.score }}
+          <span class="badge-{% if s.temperature == 'hot' %}hot{% elif s.temperature == 'warm' %}warm{% else %}cold{% endif %} px-1.5 py-0.5 rounded text-xs">{{ s.temperature }}</span>
+          {% if item.delta is not None %}<span class="text-xs font-normal text-slate-500 ms-1">Δ {% if item.delta > 0 %}+{% endif %}{{ item.delta }}</span>{% endif %}
+        </div>
+        <div class="text-xs text-slate-600 mt-1">{{ s.get_journey_stage_display }}</div>
+        {% if s.next_best_action %}<div class="text-xs text-slate-500 mt-0.5">{{ s.next_best_action }}</div>{% endif %}
+        <div class="text-xs text-slate-400 mt-1">{{ s.created_at|date:"Y-m-d H:i" }} · {% trans "Rules" %}: {{ s.rule_version }}</div>
+        {% if s.explanation %}
+        <details class="mt-2 text-xs">
+          <summary class="cursor-pointer text-teal-700 hover:underline">{% trans "Score breakdown" %}</summary>
+          <ul class="mt-2 space-y-1 text-slate-600 list-disc list-inside">
+            {% for ex in s.explanation %}
+            <li>
+              {% if ex.factor %}<span class="font-medium">{{ ex.factor }}</span>{% endif %}
+              {% if ex.contribution or ex.contribution == 0 %}<span class="text-slate-500">(+{{ ex.contribution }})</span>{% endif %}
+              {% if ex.note %} — {{ ex.note }}{% endif %}
+              {% if not ex.factor and not ex.note and not ex.contribution %}{{ ex }}{% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </details>
+        {% endif %}
       </div>
+      {% endwith %}
       {% endfor %}
     </div>
     {% endif %}

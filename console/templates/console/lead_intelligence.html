@@ -1,0 +1,238 @@
+{% extends "console/base.html" %}
+{% load i18n %}
+{% block title %}{% trans "Lead intelligence" %}{% endblock %}
+{% block content %}
+<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-8">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-800">{% trans "Lead intelligence" %}</h1>
+    <p class="text-slate-500 text-sm mt-1 max-w-2xl">
+      {% trans "Campaign and channel performance from UTMs and session attribution, geographic signals, project recommendations quality, and objection patterns from sales runs and messages." %}
+    </p>
+  </div>
+  <form method="get" class="flex items-center gap-2 shrink-0">
+    <label class="text-sm text-slate-600 font-medium">{% trans "Period" %}</label>
+    <select name="days" onchange="this.form.submit()" class="px-3 py-2 border border-slate-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+      <option value="7" {% if days == 7 %}selected{% endif %}>{% trans "7 days" %}</option>
+      <option value="30" {% if days == 30 %}selected{% endif %}>{% trans "30 days" %}</option>
+      <option value="90" {% if days == 90 %}selected{% endif %}>{% trans "90 days" %}</option>
+    </select>
+  </form>
+</div>
+
+<!-- Executive insights -->
+<div class="mb-8 space-y-3">
+  {% for line in report.insights %}
+  <div class="flex gap-3 p-4 rounded-xl border border-teal-100 bg-gradient-to-r from-teal-50/80 to-white">
+    <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center text-sm font-bold">AI</div>
+    <p class="text-sm text-slate-700 leading-relaxed">{{ line }}</p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Chart grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+  <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+    <h2 class="text-sm font-semibold text-slate-800 mb-1">{% trans "Conversation volume by channel" %}</h2>
+    <p class="text-xs text-slate-500 mb-4">{% trans "Which entry channels drive the most sessions in this period." %}</p>
+    <div class="h-64 relative"><canvas id="chart-channels"></canvas></div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+    <h2 class="text-sm font-semibold text-slate-800 mb-1">{% trans "Objection & friction signals" %}</h2>
+    <p class="text-xs text-slate-500 mb-4">{% trans "Merged from strategy snapshots (objection_key) and user message detection." %}</p>
+    <div class="h-64 relative"><canvas id="chart-objections"></canvas></div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm lg:col-span-2">
+    <h2 class="text-sm font-semibold text-slate-800 mb-1">{% trans "Top campaign segments (by volume) vs. average lead score" %}</h2>
+    <p class="text-xs text-slate-500 mb-4">{% trans "Segment label = utm_campaign if present, else source/medium or referrer. Based on first session in period per customer." %}</p>
+    <div class="h-72 relative max-w-5xl mx-auto"><canvas id="chart-campaigns"></canvas></div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm lg:col-span-2">
+    <h2 class="text-sm font-semibold text-slate-800 mb-1">{% trans "Recommended projects — avg lead score (scored leads)" %}</h2>
+    <p class="text-xs text-slate-500 mb-4">{% trans "Proxy for ‘easier to close’ interest: higher scores among leads who received recommendations for each project." %}</p>
+    <div class="h-72 relative max-w-5xl mx-auto"><canvas id="chart-projects"></canvas></div>
+  </div>
+</div>
+
+<!-- Tables -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+    <div class="px-5 py-4 border-b border-slate-100">
+      <h2 class="text-base font-semibold text-slate-800">{% trans "Campaign / source breakdown" %}</h2>
+      <p class="text-xs text-slate-500 mt-1">{% trans "Scored leads in period, attributed to first conversation (UTM) or first-touch on customer." %}</p>
+    </div>
+    <div class="overflow-x-auto max-h-96 overflow-y-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50 sticky top-0">
+          <tr>
+            <th class="px-4 py-2 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Segment" %}</th>
+            <th class="px-4 py-2 text-end text-xs font-medium text-slate-500 uppercase">{% trans "Leads" %}</th>
+            <th class="px-4 py-2 text-end text-xs font-medium text-slate-500 uppercase">{% trans "Avg score" %}</th>
+            <th class="px-4 py-2 text-end text-xs font-medium text-slate-500 uppercase">{% trans "Hot %" %}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for row in report.campaign_rows %}
+          <tr class="hover:bg-slate-50">
+            <td class="px-4 py-2 text-slate-800 max-w-xs truncate" title="{{ row.label }}">{{ row.label }}</td>
+            <td class="px-4 py-2 text-end text-slate-600">{{ row.n }}</td>
+            <td class="px-4 py-2 text-end font-medium text-slate-900">{{ row.avg_score }}</td>
+            <td class="px-4 py-2 text-end text-red-600 font-medium">{{ row.hot_pct }}%</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="px-4 py-8 text-center text-slate-500">{% trans "No scored leads in this period." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+    <div class="px-5 py-4 border-b border-slate-100">
+      <h2 class="text-base font-semibold text-slate-800">{% trans "Geography breakdown" %}</h2>
+      <p class="text-xs text-slate-500 mt-1">{% trans "From city / region / country passed with the chat widget or CRM handoff." %}</p>
+    </div>
+    <div class="overflow-x-auto max-h-96 overflow-y-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50 sticky top-0">
+          <tr>
+            <th class="px-4 py-2 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Geo" %}</th>
+            <th class="px-4 py-2 text-end text-xs font-medium text-slate-500 uppercase">{% trans "Leads" %}</th>
+            <th class="px-4 py-2 text-end text-xs font-medium text-slate-500 uppercase">{% trans "Avg score" %}</th>
+            <th class="px-4 py-2 text-end text-xs font-medium text-slate-500 uppercase">{% trans "Hot %" %}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for row in report.geo_rows %}
+          <tr class="hover:bg-slate-50">
+            <td class="px-4 py-2 text-slate-800">{{ row.label }}</td>
+            <td class="px-4 py-2 text-end text-slate-600">{{ row.n }}</td>
+            <td class="px-4 py-2 text-end font-medium text-slate-900">{{ row.avg_score }}</td>
+            <td class="px-4 py-2 text-end text-red-600 font-medium">{{ row.hot_pct }}%</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="px-4 py-8 text-center text-slate-500">{% trans "No geographic attribution yet." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+    <div class="px-5 py-4 border-b border-slate-100">
+      <h2 class="text-base font-semibold text-slate-800">{% trans "Projects (recommendations)" %}</h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50">
+          <tr>
+            <th class="px-4 py-2 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Project" %}</th>
+            <th class="px-4 py-2 text-end text-xs font-medium text-slate-500 uppercase">{% trans "Recs" %}</th>
+            <th class="px-4 py-2 text-end text-xs font-medium text-slate-500 uppercase">{% trans "Avg score" %}</th>
+            <th class="px-4 py-2 text-end text-xs font-medium text-slate-500 uppercase">{% trans "Hot %" %}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for p in report.projects %}
+          <tr class="hover:bg-slate-50">
+            <td class="px-4 py-2">
+              <span class="text-slate-800 font-medium">{{ p.name }}</span>
+              {% if p.location %}<p class="text-xs text-slate-500">{{ p.location }}</p>{% endif %}
+            </td>
+            <td class="px-4 py-2 text-end text-slate-600">{{ p.rec_count }}</td>
+            <td class="px-4 py-2 text-end font-medium">{% if p.avg_lead_score is not None %}{{ p.avg_lead_score }}{% else %}—{% endif %}</td>
+            <td class="px-4 py-2 text-end">{% if p.hot_pct is not None %}<span class="text-red-600 font-medium">{{ p.hot_pct }}%</span>{% else %}—{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="px-4 py-8 text-center text-slate-500">{% trans "No recommendations in this period." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+    <div class="px-5 py-4 border-b border-slate-100">
+      <h2 class="text-base font-semibold text-slate-800">{% trans "Objections (detail)" %}</h2>
+      <p class="text-xs text-slate-500 mt-1">{% trans "Combined frequency from orchestration routing and message pattern matching." %}</p>
+    </div>
+    <div class="overflow-x-auto max-h-80 overflow-y-auto">
+      <table class="min-w-full divide-y divide-slate-200 text-sm">
+        <thead class="bg-slate-50 sticky top-0">
+          <tr>
+            <th class="px-4 py-2 text-start text-xs font-medium text-slate-500 uppercase">{% trans "Theme" %}</th>
+            <th class="px-4 py-2 text-end text-xs font-medium text-slate-500 uppercase">{% trans "Signals" %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in report.objections %}
+          <tr class="hover:bg-slate-50">
+            <td class="px-4 py-2 text-slate-800">{{ o.label }}</td>
+            <td class="px-4 py-2 text-end text-slate-600">{{ o.count }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" class="px-4 py-8 text-center text-slate-500">{% trans "No objections detected in this window." %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="mt-10 p-5 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-600 leading-relaxed">
+  <p class="font-semibold text-slate-800 mb-2">{% trans "How to send UTMs & geo from your site" %}</p>
+  <p>{% trans "Include optional fields on the same JSON body as your web chat message: utm_source, utm_medium, utm_campaign, utm_content, utm_term, referrer, landing_page, country, region, city. Alternatively pass a nested object attribution with the same keys." %}</p>
+</div>
+
+{{ charts_payload|json_script:"intel-charts-payload" }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var el = document.getElementById('intel-charts-payload');
+  if (!el || typeof Chart === 'undefined') return;
+  var charts = JSON.parse(el.textContent);
+
+  if (charts.channel_labels && charts.channel_labels.length) {
+    new Chart(document.getElementById('chart-channels'), {
+      type: 'doughnut',
+      data: {
+        labels: charts.channel_labels,
+        datasets: [{ data: charts.channel_counts, backgroundColor: ['#14b8a6', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b'] }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  if (charts.objection_labels && charts.objection_labels.length) {
+    new Chart(document.getElementById('chart-objections'), {
+      type: 'bar',
+      data: {
+        labels: charts.objection_labels,
+        datasets: [{ label: '', data: charts.objection_counts, backgroundColor: '#0d9488' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { beginAtZero: true } } }
+    });
+  }
+
+  if (charts.campaign_labels && charts.campaign_labels.length) {
+    new Chart(document.getElementById('chart-campaigns'), {
+      type: 'bar',
+      data: {
+        labels: charts.campaign_labels,
+        datasets: [{ label: '{% trans "Avg lead score" %}', data: charts.campaign_avgs, backgroundColor: 'rgba(13, 148, 136, 0.85)' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+    });
+  }
+
+  if (charts.project_labels && charts.project_labels.length) {
+    new Chart(document.getElementById('chart-projects'), {
+      type: 'bar',
+      data: {
+        labels: charts.project_labels,
+        datasets: [{ label: '{% trans "Avg lead score" %}', data: charts.project_scores, backgroundColor: 'rgba(59, 130, 246, 0.85)' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', scales: { x: { beginAtZero: true, max: 100 } } }
+    });
+  }
+});
+</script>
+{% endblock %}
