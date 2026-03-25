@@ -467,22 +467,10 @@ def _ensure_recommendation_samples():
 
 
 def _recommendations_vercel_fallback() -> HttpResponse:
-    """Standalone HTML: no Django template stack (avoids context processors / DB edge cases)."""
-    html = """<!DOCTYPE html><html lang="ar" dir="rtl"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>التوصيات — Recommendations</title>
-<style>
-body{font-family:system-ui,sans-serif;max-width:42rem;margin:2rem auto;padding:0 1rem;background:#f8fafc;color:#0f172a}
-h1{font-size:1.5rem}a{color:#0d9488} .box{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;margin-top:1rem}
-.muted{color:#64748b;font-size:.9rem}
-</style></head><body>
-<h1>التوصيات</h1>
-<p class="muted">على الاستضافة السحابية (Vercel) تُعرض هذه الصفحة المبسّطة لتفادي أخطاء الاتصال بقاعدة البيانات.</p>
-<div class="box">
-<p>لعرض التوصيات الكاملة مع البيانات، شغّل المشروع محلياً أو استخدم بيئة بخادم طويل الأمد (مثل Railway / Render).</p>
-<p><a href="/console/">← لوحة التحكم</a> · <a href="/api/engines/demo/">تجربة الدردشة</a></p>
-</div>
-</body></html>"""
+    """Full UI + sample cards; template rendered without RequestContext (no DB in context processors)."""
+    from django.template.loader import get_template
+
+    html = get_template("console/recommendations_vercel.html").render({})
     return HttpResponse(html, content_type="text/html; charset=utf-8")
 
 
