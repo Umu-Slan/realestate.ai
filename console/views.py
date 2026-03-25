@@ -487,8 +487,10 @@ h1{font-size:1.5rem}a{color:#0d9488} .box{background:#fff;border:1px solid #e2e8
 
 
 def recommendations_view(request):
-    import os
-    if os.environ.get("VERCEL") == "1":
+    from django.conf import settings
+
+    host = (request.get_host() or "").lower()
+    if ".vercel.app" in host or getattr(settings, "IS_VERCEL_DEPLOY", False):
         return _recommendations_vercel_fallback()
     recs = []
     try:

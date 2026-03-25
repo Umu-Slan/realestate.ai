@@ -1,8 +1,13 @@
 """Context processors for console templates."""
-import os
+from django.conf import settings
 
 from support.models import Escalation
 from core.enums import EscalationStatus
+
+
+def _skip_console_db(request) -> bool:
+    host = (request.get_host() or "").lower()
+    return ".vercel.app" in host or getattr(settings, "IS_VERCEL_DEPLOY", False)
 
 
 def console_stats(request):
@@ -10,8 +15,7 @@ def console_stats(request):
     base = {"stats": {"escalations_open": 0}, "company_name": None}
     if not request.user.is_authenticated:
         return base
-    # Vercel: avoid extra Neon queries on every console page (hangs / 500)
-    if os.environ.get("VERCEL") == "1":
+    if _skip_console_db(request):
         return base
     try:
         from companies.services import get_default_company

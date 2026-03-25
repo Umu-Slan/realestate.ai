@@ -25,10 +25,17 @@ _unsafe_secret = SECRET_KEY in ("dev-secret-key-change-in-production", "change-t
 DEBUG = False if (_django_env == "production") else env("DEBUG")
 _allowed = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1", "testserver"])
 # Vercel: allow all *.vercel.app deployment URLs (preview + production)
-_is_vercel = os.environ.get("VERCEL") == "1" or env.bool("VERCEL", default=False)
+# VERCEL_ENV is set on all Vercel deployments; VERCEL=1 is usually set but not always visible in runtime
+_is_vercel = (
+    os.environ.get("VERCEL") == "1"
+    or bool(os.environ.get("VERCEL_ENV"))
+    or env.bool("VERCEL", default=False)
+)
 if _is_vercel:
     _allowed.extend([".vercel.app", os.environ.get("VERCEL_URL", "")])
 ALLOWED_HOSTS = list(dict.fromkeys(h for h in _allowed if h))
+# Used in views/context processors (host check is still valid when custom domain hides VERCEL_*)
+IS_VERCEL_DEPLOY = _is_vercel
 
 INSTALLED_APPS = [
     "django.contrib.admin",
