@@ -34,8 +34,6 @@ _is_vercel = (
 if _is_vercel:
     _allowed.extend([".vercel.app", os.environ.get("VERCEL_URL", "")])
 ALLOWED_HOSTS = list(dict.fromkeys(h for h in _allowed if h))
-# Used in views/context processors (host check is still valid when custom domain hides VERCEL_*)
-IS_VERCEL_DEPLOY = _is_vercel
 if _is_vercel:
     USE_X_FORWARDED_HOST = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -160,10 +158,6 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SECURE = not DEBUG
 SESSION_SAVE_EVERY_REQUEST = False
-# Vercel: default DB-backed sessions write after every response; Neon latency/timeouts → 500.
-# Signed cookies avoid a second DB round-trip after the view returns.
-if _is_vercel:
-    SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
 CSRF_COOKIE_HTTPONLY = False  # JS needs to read for AJAX
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = not DEBUG

@@ -1,6 +1,6 @@
 """Operator console views."""
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.decorators import admin_required
@@ -466,44 +466,36 @@ def _ensure_recommendation_samples():
         )
 
 
-def _recommendations_vercel_fallback() -> HttpResponse:
-    """Full UI + sample cards; template rendered without RequestContext (no DB in context processors)."""
-    from django.template.loader import get_template
-
-    html = get_template("console/recommendations_vercel.html").render({})
-    return HttpResponse(html, content_type="text/html; charset=utf-8")
-
-
 def recommendations_view(request):
-    from django.conf import settings
+    import logging
+    import os
 
-    host = (request.get_host() or "").lower()
-    if ".vercel.app" in host or getattr(settings, "IS_VERCEL_DEPLOY", False):
-        return _recommendations_vercel_fallback()
     recs = []
     try:
-        _ensure_recommendation_samples()
+        if os.environ.get("VERCEL") != "1":
+            _ensure_recommendation_samples()
         recs = list(
-            Recommendation.objects
-            .select_related("customer", "customer__identity", "project", "conversation")
-            .order_by("-created_at")[:20]
+            Recommendation.objects.select_related(
+                "customer", "customer__identity", "project", "conversation"
+            ).order_by("-created_at")[:100]
         )
         for r in recs:
             m = r.metadata if isinstance(r.metadata, dict) else {}
             r.display_meta = {
                 "confidence": m.get("confidence"),
-                "match_reasons": m.get("why_it_matches") or m.get("match_reasons") or m.get("top_reasons") or [],
+                "match_reasons": m.get("why_it_matches")
+                or m.get("match_reasons")
+                or m.get("top_reasons")
+                or [],
                 "tradeoffs": m.get("tradeoffs") or m.get("trade_offs") or [],
             }
-        return render(request, "console/recommendations.html", {
-            "recommendations": recs,
-            "nav_section": "recommendations",
-        })
-    except Exception as e:
-        return HttpResponse(
-            f"<h2>Recommendations</h2><p>Error: {type(e).__name__}: {e}</p>",
-            content_type="text/html",
-        )
+    except Exception:
+        logging.getLogger(__name__).exception("recommendations_view")
+    return render(
+        request,
+        "console/recommendations.html",
+        {"recommendations": recs, "nav_section": "recommendations"},
+    )
 
 
 def knowledge(request):
