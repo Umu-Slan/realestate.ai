@@ -36,6 +36,9 @@ if _is_vercel:
 ALLOWED_HOSTS = list(dict.fromkeys(h for h in _allowed if h))
 # Used in views/context processors (host check is still valid when custom domain hides VERCEL_*)
 IS_VERCEL_DEPLOY = _is_vercel
+if _is_vercel:
+    USE_X_FORWARDED_HOST = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
