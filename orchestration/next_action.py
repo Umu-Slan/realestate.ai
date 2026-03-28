@@ -91,15 +91,6 @@ def compute_next_best_action(
             priority=45,
         )
 
-    # Budget + location present -> move to consideration: recommend projects
-    # Advance stage regardless of temperature when both key qualifiers are known
-    if "budget" not in missing and "location" not in missing:
-        return NextActionResult(
-            action=NextBestAction.RECOMMEND_PROJECT,
-            reason="Qualified - suggest matching projects",
-            priority=65,
-        )
-
     # Hot lead in visit_planning -> assign sales rep
     if stage == "visit_planning" and temperature == "hot" and score >= 75:
         return NextActionResult(
@@ -108,7 +99,7 @@ def compute_next_best_action(
             priority=88,
         )
 
-    # Intent-specific
+    # Intent-specific (before "fully qualified" shortcut — empty missing_fields is not the same as qualified)
     if "brochure" in intent or intent == "brochure_request":
         return NextActionResult(
             action=NextBestAction.SEND_BROCHURE,
@@ -126,6 +117,14 @@ def compute_next_best_action(
             action=NextBestAction.RECOMMEND_PROJECT,
             reason="Project/price inquiry",
             priority=60,
+        )
+
+    # Budget + location no longer missing -> suggest matching projects
+    if missing and "budget" not in missing and "location" not in missing:
+        return NextActionResult(
+            action=NextBestAction.RECOMMEND_PROJECT,
+            reason="Qualified - suggest matching projects",
+            priority=65,
         )
 
     # Temperature-based

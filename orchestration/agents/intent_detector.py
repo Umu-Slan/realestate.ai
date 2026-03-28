@@ -73,6 +73,15 @@ INTENT_PATTERNS_AR = [
     (r"(?:حجز|book|reserve|احجز|حجز وحدة)", "booking_intent", False, False, False),
     (r"(?:زيارة|visit|جولة|tour|معاينة|أزور|زيارة الموقع)", "visit_request", False, False, False),
     (r"(?:متى أقدر أزور|أريد معاينة|schedule)", "visit_request", False, False, False),
+    # Explicit “recommend / suggest projects” (Egyptian: رشحلي، اقترحلي — was falling through to other → intent_not_buy)
+    (
+        r"(?:رشحلي|رشّحلي|ارشحلي|رشحني|رشح\s*لي|ارشح\s*لي|اقترحلي|اقترح\s*لي|وصّيني|وصيني|"
+        r"recommend|suggest\s+project|show\s+projects|عرض\s*المشاريع|مشاريع\s*(?:مناسبة|مقترحة|تناسبني))",
+        "property_search",
+        False,
+        False,
+        False,
+    ),
     # Investment (before property_search: "عايز استثمار" = investment, not generic search)
     (r"(?:استثمار|investment|استثماري|عائد|return)", "investment_inquiry", False, False, False),
     # Property search (before location: "عايز شقة في المعادي" = search, not "where")
@@ -90,10 +99,35 @@ INTENT_PATTERNS_AR = [
 
 # Vague/short - low confidence, need context
 VAGUE_PATTERNS = [
-    (r"^(?:hi|hello|مرحبا|أهلا|السلام)", "unclear"),
+    (r"^(?:hi|hello|مرحبا|مرحباً(?:ا+)?|أهلا|السلام)", "unclear"),
     (r"^(?:شكراً|thanks|ممتاز|تمام|ok)\s*$", "unclear"),
     (r"^[؟?.\s]+$", "unclear"),
 ]
+
+
+def _normalize_chat_typos(text: str) -> str:
+    """Common Arabic keyboard typo: extra ا after ً (e.g. مرحباًا → مرحباً)."""
+    t = (text or "").strip()
+    t = re.sub(r"اًا+\s*$", "اً", t)
+    return t
+
+
+def _is_trivial_greeting_only(text: str) -> bool:
+    """Whole message is only a hello/hi — skip LLM intent call (latency + hang safety)."""
+    t = re.sub(r"\s+", " ", (text or "").strip())
+    t = _normalize_chat_typos(t)
+    if len(t) > 48:
+        return False
+    patterns = (
+        r"^(?:hi|hello|hey)\s*[!.]*\s*$",
+        r"^مرحباً?(?:ا+)?\s*[!.؟،]*\s*$",
+        r"^مرحب[اأإآ]+\s*[!.؟،]*\s*$",
+        r"^أ?هلا+ً?\s*[!.؟،]*\s*$",
+        r"^هلا\s*[!.؟،]*\s*$",
+        r"^السلام\s*عليكم\s*[!.؟،]*\s*$",
+        r"^سلام\s*عليكم\s*[!.؟،]*\s*$",
+    )
+    return any(re.match(p, t, re.IGNORECASE | re.UNICODE) for p in patterns)
 
 
 def _extract_entity_budget(text: str) -> Optional[dict]:
@@ -364,8 +398,11 @@ def detect_intent(
     Detect true sales/support intent and extract entities.
     Arabic-first. Handles vague messages. Falls back to LLM when available.
     """
-    text = (message_text or "").strip()
+    text = _normalize_chat_typos((message_text or "").strip())
     history = list(conversation_history or [])
+
+    if use_llm and _is_trivial_greeting_only(text):
+        return _detect_deterministic(text, history)
 
     if use_llm:
         llm_result = _detect_llm(text, history, customer_type)

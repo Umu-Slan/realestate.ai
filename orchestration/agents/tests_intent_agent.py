@@ -101,6 +101,13 @@ def test_intent_detector_unclear_vague():
     assert r.confidence < 0.6
 
 
+def test_intent_detector_recommend_colloquial_ar():
+    """Egyptian 'رشحلي' must be buy/search intent so recommendations are not blocked as intent_not_buy."""
+    r = detect_intent("ايوة رشحلي انت", use_llm=False)
+    assert r.intent == "property_search"
+    assert r.legacy_primary == "property_purchase"
+
+
 def test_intent_detector_unclear_empty():
     """Very short or empty."""
     r = detect_intent("ه", use_llm=False)

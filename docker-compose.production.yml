@@ -31,6 +31,32 @@ services:
       start_period: 15s
     restart: unless-stopped
 
+  # Background tasks (ready for future @shared_task); harmless if no tasks registered
+  celery:
+    build: .
+    image: realestate-ai:latest
+    container_name: realestate_celery_prod
+    env_file: .env
+    environment:
+      DJANGO_ENV: production
+      DJANGO_SETTINGS_MODULE: config.settings_production
+      DATABASE_URL: postgresql://realestate:${POSTGRES_PASSWORD:-realestate_prod}@postgres:5432/realestate_ai
+      CELERY_BROKER_URL: redis://redis:6379/1
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - media_prod_data:/app/media
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Override image ENTRYPOINT so we do not re-run collectstatic on the worker
+    entrypoint:
+      - /bin/sh
+      - -c
+      - python manage.py wait_for_db --timeout=60 && exec celery -A config.celery worker -l info
+    restart: unless-stopped
+
   postgres:
     image: pgvector/pgvector:pg16
     container_name: realestate_postgres_prod

@@ -307,3 +307,37 @@ def test_sample_conversations():
         if sample.get("expected_intent"):
             exp = sample["expected_intent"].lower()
             assert exp in (result.intent.primary or "").lower() or result.intent.is_spam == (exp == "spam") or result.intent.is_broker == (exp == "broker_inquiry")
+
+
+def test_clarification_bypass_lexical_and_visit_flow():
+    from intelligence.services.clarification_bypass import (
+        message_has_strong_lead_lexical_signal,
+        relax_clarification_routing_if_applicable,
+        visit_scheduling_continuation,
+    )
+    from intelligence.schemas import IntentResult, RoutingDecision, ScoringResult
+
+    assert message_has_strong_lead_lexical_signal("ايوة رشحلي انت")
+    assert message_has_strong_lead_lexical_signal("عرض المشاريع المناسبة")
+    assert visit_scheduling_continuation(
+        [{"role": "assistant", "content": "متى يناسبك معاينة؟"}],
+        "الثلاثاء العاشرة صباحاً",
+    )
+    low = ScoringResult(
+        score=20,
+        temperature="nurture",
+        confidence="low",
+        missing_fields=["budget", "location", "project", "property_type", "timeline"],
+    )
+    intent = IntentResult(primary="property_purchase", confidence=0.75)
+    r_clar = RoutingDecision(
+        route="clarification",
+        requires_human_review=True,
+        handoff_type="clarification",
+        reason="Low confidence",
+    )
+    relaxed = relax_clarification_routing_if_applicable(
+        r_clar, intent, low, "رشحلي مشروع", []
+    )
+    assert relaxed.route == "sales"
+    assert relaxed.requires_human_review is False

@@ -45,10 +45,10 @@
           <li class="p-4 bg-slate-50 rounded-lg border border-slate-100">
             <div class="flex flex-wrap gap-2 items-center text-xs text-slate-500 mb-2">
               <span class="font-medium">#{{ ch.chunk_index }} · {{ ch.chunk_type }}</span>
-              {% if ch._retrieval_meta %}
-              <span>doc:{{ ch._retrieval_meta.document_type }}</span>
-              <span>verify:{{ ch._retrieval_meta.verification_status }}</span>
-              <span>access:{{ ch._retrieval_meta.access_level }}</span>
+              {% if ch.retrieval_meta %}
+              <span>doc:{{ ch.retrieval_meta.document_type }}</span>
+              <span>verify:{{ ch.retrieval_meta.verification_status }}</span>
+              <span>access:{{ ch.retrieval_meta.access_level }}</span>
               {% endif %}
             </div>
             <div class="text-sm text-slate-700">{{ ch.content|truncatewords:50 }}</div>

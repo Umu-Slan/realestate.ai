@@ -66,8 +66,12 @@ class NormalizedInboundMessage:
             "conversation_history": extra.get("conversation_history"),
             "use_llm": extra.get("use_llm", True),
             "response_mode": extra.get("response_mode"),
-            "sales_mode": extra.get("sales_mode", "warm_lead"),
-            "is_angry": extra.get("is_angry", False),
+            "sales_mode": (
+                extra["sales_mode"]
+                if extra.get("sales_mode") is not None
+                else "warm_lead"
+            ),
+            "is_angry": False if extra.get("is_angry") is None else bool(extra.get("is_angry")),
             "support_category": extra.get("support_category", ""),
             "qualification_override": extra.get("qualification_override"),
             "lang": extra.get("lang", "ar"),

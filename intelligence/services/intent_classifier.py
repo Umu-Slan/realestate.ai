@@ -27,6 +27,8 @@ INTENT_PATTERNS = [
     (r"(?:مستند|إشعار|documentation|document|طلب ورق|طلب مستند)", IntentCategory.DOCUMENTATION_INQUIRY, True, False, False),
     (r"(?:إثبات دفع|اثبات الدفع|payment proof|proof of payment)", IntentCategory.PAYMENT_PROOF_INQUIRY, True, False, False),
     # Sales intents
+    (r"(?:رشح|رشّح|ترشيح|رشحلي)", IntentCategory.PROPERTY_PURCHASE, False, False, False),
+    (r"عرض\s*(?:ال)?مشاريع", IntentCategory.PROJECT_INQUIRY, False, False, False),
     (r"(?:زيارة|visit|جولة|tour|معاينة)", IntentCategory.SCHEDULE_VISIT, False, False, False),
     (r"(?:بروشور|brochure|ك brochure|كتيب)", IntentCategory.BROCHURE_REQUEST, False, False, False),
     (r"(?:السعر|سعر|السعر كام|price|كم التكلفة)", IntentCategory.PRICE_INQUIRY, False, False, False),

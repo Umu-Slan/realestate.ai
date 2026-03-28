@@ -177,8 +177,28 @@ OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
 
 # WhatsApp Business API webhook verification
 WHATSAPP_VERIFY_TOKEN = env("WHATSAPP_VERIFY_TOKEN", default="")
+
+# Optional: require Bearer / X-API-Key for POST /api/channels/inbound/ (Facebook, Telegram, etc.)
+CHANNEL_INBOUND_API_KEY = env("CHANNEL_INBOUND_API_KEY", default="")
+
+# CRM ↔ company systems
+# Inbound: POST /api/crm/events/ — external CRM pushes lead updates (set secret in production).
+CRM_INBOUND_WEBHOOK_SECRET = env("CRM_INBOUND_WEBHOOK_SECRET", default="")
+# Outbound: after AI sync updates local CRMRecord, POST snapshot to your middleware (Zapier, n8n, …).
+EXTERNAL_CRM_PUSH_ENABLED = env.bool("EXTERNAL_CRM_PUSH_ENABLED", default=False)
+EXTERNAL_CRM_PUSH_MODE = env("EXTERNAL_CRM_PUSH_MODE", default="stub")  # stub | webhook
+EXTERNAL_CRM_WEBHOOK_URL = env("EXTERNAL_CRM_WEBHOOK_URL", default="")
+EXTERNAL_CRM_WEBHOOK_SECRET = env("EXTERNAL_CRM_WEBHOOK_SECRET", default="")
+EXTERNAL_CRM_WEBHOOK_TIMEOUT = int(env("EXTERNAL_CRM_WEBHOOK_TIMEOUT", default=15))
 LLM_MODEL = env("LLM_MODEL", default="gpt-4o-mini")
+# OpenAI HTTP timeout (seconds) for intelligence + composer calls — avoids hung demo/API requests
+LLM_TIMEOUT_SECONDS = int(env("LLM_TIMEOUT_SECONDS", default=30))
 EMBEDDING_MODEL = env("EMBEDDING_MODEL", default="text-embedding-3-small")
+
+# Tesseract OCR (optional): path to tesseract.exe on Windows if not on PATH — see docs/OCR_WINDOWS.md
+TESSERACT_CMD = env("TESSERACT_CMD", default="")
+# BCP 47-style langs for tesseract (e.g. ara+eng for Arabic brochures). Fallbacks are tried if a pack is missing.
+TESSERACT_LANG = env("TESSERACT_LANG", default="ara+eng")
 
 # Observability: structured logging for pipeline events
 LOGGING = {

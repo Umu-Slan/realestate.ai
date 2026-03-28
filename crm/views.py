@@ -1,16 +1,31 @@
 """
-CRM API: import, import summary.
+CRM API: import, import summary, inbound events from external CRM.
 """
 import tempfile
 from pathlib import Path
 
+from django.conf import settings
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from crm.models import CRMImportBatch
 from crm.services.import_service import import_crm_file
+from crm.services.external_sync import upsert_crm_lead_from_payload
+
+
+def _crm_inbound_authorized(request) -> bool:
+    secret = (getattr(settings, "CRM_INBOUND_WEBHOOK_SECRET", None) or "").strip()
+    if not secret:
+        return bool(getattr(settings, "DEBUG", False))
+    auth = (request.headers.get("Authorization") or "").strip()
+    if auth.lower().startswith("bearer "):
+        if auth[7:].strip() == secret:
+            return True
+    if (request.headers.get("X-Webhook-Secret") or "").strip() == secret:
+        return True
+    return False
 
 
 @api_view(["POST"])
@@ -65,3 +80,28 @@ def import_summary(request):
         for b in batches
     ]
     return Response(data)
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def crm_events_inbound(request):
+    """
+    Receive lead updates from the company's CRM / middleware.
+
+    POST /api/crm/events/
+    Auth: set CRM_INBOUND_WEBHOOK_SECRET in .env, then send:
+      Authorization: Bearer <secret>   OR   X-Webhook-Secret: <secret>
+    If secret is unset, only DEBUG=True accepts requests (unsafe for production).
+
+    Body JSON: crm_id (required), name, phone, email, notes, lead_stage, owner, tags, ...
+    """
+    if not _crm_inbound_authorized(request):
+        return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    data = request.data if isinstance(request.data, dict) else {}
+    result = upsert_crm_lead_from_payload(data, actor="crm_inbound_webhook")
+    st = result.get("status", "error")
+    if st == "error":
+        return Response(result, status=status.HTTP_400_BAD_REQUEST)
+    return Response(result, status=status.HTTP_200_OK)

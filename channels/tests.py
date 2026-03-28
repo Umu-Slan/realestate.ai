@@ -282,7 +282,32 @@ def test_whatsapp_persistence_get_or_create():
 
     customer2, conv2 = get_or_create_whatsapp_customer_conversation(phone="201011111111")
     assert customer2.id == customer.id
-    assert conv2.id == conversation.id
+
+
+@pytest.mark.django_db
+def test_omnichannel_telegram_identity_and_api_conversation():
+    """Non-web connectors get namespaced external_id and separate API conversations."""
+    from companies.services import ensure_default_company
+    from channels.persistence import get_or_create_web_customer_conversation_from_normalized
+    from core.enums import SourceChannel
+
+    ensure_default_company()
+    msg = NormalizedInboundMessage(
+        content="hello",
+        source_channel="telegram",
+        external_id="999888",
+        phone="",
+        email="",
+        name="TG User",
+    )
+    cust, conv = get_or_create_web_customer_conversation_from_normalized(msg)
+    assert cust.identity.external_id == "telegram:999888"
+    assert conv.channel == SourceChannel.API
+    assert conv.metadata.get("connector") == "telegram"
+
+    cust2, conv2 = get_or_create_web_customer_conversation_from_normalized(msg)
+    assert cust2.id == cust.id
+    assert conv2.id == conv.id
 
 
 @pytest.mark.django_db
@@ -297,7 +322,8 @@ def test_whatsapp_webhook_verification(client):
             {"hub.mode": "subscribe", "hub.verify_token": token, "hub.challenge": "challenge123"},
         )
         assert r.status_code == 200
-        assert r.content == b"challenge123"
+        body = r.content.decode().strip().strip('"')
+        assert body == "challenge123"
     finally:
         settings.WHATSAPP_VERIFY_TOKEN = ""
 

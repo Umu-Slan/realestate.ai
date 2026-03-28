@@ -6,14 +6,38 @@
 
 <p class="text-slate-600 mb-6">{% trans "Import real company data: documents, project metadata, payment plans, FAQs, support SOPs, and CRM exports." %}</p>
 
+{% if ocr_status %}
+<div class="mb-6 rounded-xl border p-4 text-sm {% if ocr_status.tesseract %}border-teal-200 bg-teal-50 text-teal-900{% elif ocr_status.pytesseract %}border-amber-200 bg-amber-50 text-amber-950{% else %}border-slate-200 bg-slate-50 text-slate-800{% endif %}">
+  <p class="font-semibold mb-1">{% trans "Image OCR (Tesseract)" %}</p>
+  {% if ocr_status.tesseract %}
+  <p>{% blocktrans with v=ocr_status.version %}OCR is ready. Tesseract version {{ v }}. Uploaded images (JPG, PNG, …) will get extracted text for search when possible.{% endblocktrans %}</p>
+  {% elif ocr_status.pytesseract %}
+  <p>{% trans "The Python OCR library is installed, but the Tesseract program was not found or failed to run. Install Tesseract for Windows (or add it to PATH) or set TESSERACT_CMD in .env to tesseract.exe." %}</p>
+  {% if ocr_status.error %}<p class="mt-2 font-mono text-xs opacity-90 break-all">{{ ocr_status.error }}</p>{% endif %}
+  <p class="mt-2 text-xs">{% trans "Setup guide (Windows):" %} <code class="bg-white/70 px-1 rounded border border-amber-200/80">docs/OCR_WINDOWS.md</code> — {% trans "Verify:" %} <code class="bg-white/70 px-1 rounded border border-amber-200/80">python manage.py check_ocr</code></p>
+  {% else %}
+  <p>{% trans "Install OCR dependencies:" %} <code class="bg-white px-1 rounded border border-slate-200">pip install -r requirements.txt</code> {% trans "then install the Tesseract application (see guide below)." %}</p>
+  {% if ocr_status.error %}<p class="mt-2 font-mono text-xs break-all">{{ ocr_status.error }}</p>{% endif %}
+  <p class="mt-2 text-xs">{% trans "Windows guide:" %} <code class="bg-white px-1 rounded border border-slate-200">docs/OCR_WINDOWS.md</code> — <code class="bg-white px-1 rounded border border-slate-200">python manage.py check_ocr</code></p>
+  {% endif %}
+</div>
+{% endif %}
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
   <!-- Documents -->
-  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+  <div id="documents" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 scroll-mt-24">
     <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "Documents" %}</h2>
-    <p class="text-sm text-slate-600 mb-4">{% trans "PDF, CSV, Excel, TXT. Brochures, FAQs, SOPs, credibility." %}</p>
+    <p class="text-sm text-slate-600 mb-4">{% trans "PDF, images (with OCR), CSV, Excel, TXT. Brochures, FAQs, SOPs." %}</p>
     <form action="{% url 'onboarding:upload_documents' %}" method="post" enctype="multipart/form-data" class="space-y-3">
       {% csrf_token %}
-      <input type="file" name="files" multiple accept=".pdf,.csv,.xlsx,.xls,.txt,.md" class="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700">
+      <div>
+        <input type="file" id="onboarding-files-docs" name="files" multiple accept=".pdf,.csv,.xlsx,.xls,.txt,.md,.jpg,.jpeg,.png,.webp,.gif,.tif,.tiff,.bmp,image/*" class="sr-only onboarding-file-input" aria-label="{% trans 'Choose files' %}">
+        <label for="onboarding-files-docs" class="flex flex-col items-center justify-center w-full min-h-[3rem] px-4 py-3 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-teal-400 hover:bg-teal-50/40 transition text-center">
+          <span class="text-sm font-medium text-teal-700">{% trans "Choose files" %}</span>
+          <span class="text-xs text-slate-500 mt-1">{% trans "PDF, images, CSV, Excel, TXT, MD" %}</span>
+          <span class="text-xs text-slate-600 mt-2 font-medium break-all min-h-[1.25rem]" data-file-hint="onboarding-files-docs"></span>
+        </label>
+      </div>
       <div>
         <label class="block text-xs text-slate-500 mb-1">{% trans "Document type" %}</label>
         <select name="document_type" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm">
@@ -40,30 +64,44 @@
   </div>
 
   <!-- Structured data -->
-  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+  <div id="structured" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 scroll-mt-24">
     <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "Structured Data" %}</h2>
     <p class="text-sm text-slate-600 mb-4">{% trans "Project metadata, payment plans. CSV with columns: name, location, price_min, price_max, installment_years_min, down_payment_pct_min." %}</p>
     <form action="{% url 'onboarding:upload_structured' %}" method="post" enctype="multipart/form-data" class="space-y-3">
       {% csrf_token %}
-      <input type="file" name="file" accept=".csv" class="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700">
+      <div>
+        <input type="file" id="onboarding-files-structured" name="file" accept=".csv,.xlsx,.xls" class="sr-only onboarding-file-input" aria-label="{% trans 'Choose file' %}">
+        <label for="onboarding-files-structured" class="flex flex-col items-center justify-center w-full min-h-[3rem] px-4 py-3 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-teal-400 hover:bg-teal-50/40 transition text-center">
+          <span class="text-sm font-medium text-teal-700">{% trans "Choose file" %}</span>
+          <span class="text-xs text-slate-500 mt-1">{% trans "CSV recommended" %}</span>
+          <span class="text-xs text-slate-600 mt-2 font-medium break-all min-h-[1.25rem]" data-file-hint="onboarding-files-structured"></span>
+        </label>
+      </div>
       <button type="submit" class="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">{% trans "Import CSV" %}</button>
     </form>
   </div>
 
   <!-- CRM -->
-  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+  <div id="crm" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 scroll-mt-24">
     <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "CRM Export" %}</h2>
     <p class="text-sm text-slate-600 mb-4">{% trans "Leads, contacts. CSV or Excel. Columns: crm_id, name, phone, email, notes." %}</p>
     <form action="{% url 'onboarding:upload_crm' %}" method="post" enctype="multipart/form-data" class="space-y-3">
       {% csrf_token %}
-      <input type="file" name="file" accept=".csv,.xlsx,.xls" class="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700">
+      <div>
+        <input type="file" id="onboarding-files-crm" name="file" accept=".csv,.xlsx,.xls" class="sr-only onboarding-file-input" aria-label="{% trans 'Choose file' %}">
+        <label for="onboarding-files-crm" class="flex flex-col items-center justify-center w-full min-h-[3rem] px-4 py-3 border-2 border-dashed border-slate-200 rounded-lg cursor-pointer hover:border-teal-400 hover:bg-teal-50/40 transition text-center">
+          <span class="text-sm font-medium text-teal-700">{% trans "Choose file" %}</span>
+          <span class="text-xs text-slate-500 mt-1">{% trans "CSV or Excel" %}</span>
+          <span class="text-xs text-slate-600 mt-2 font-medium break-all min-h-[1.25rem]" data-file-hint="onboarding-files-crm"></span>
+        </label>
+      </div>
       <button type="submit" class="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-medium">{% trans "Import CRM" %}</button>
     </form>
   </div>
 </div>
 
 <!-- Reindex -->
-<div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+<div id="reindex" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8 scroll-mt-24">
   <h2 class="text-lg font-semibold text-slate-800 mb-3">{% trans "Reindex Knowledge" %}</h2>
   <p class="text-sm text-slate-600 mb-4">{% trans "Rebuild embeddings for documents after bulk import or model change." %}</p>
   <form action="{% url 'onboarding:reindex_documents' %}" method="post" class="inline">
@@ -110,4 +148,19 @@
 {% trans "Upload documents, structured data, or CRM exports to get started." as no_batch_msg %}
 {% include "console/includes/empty_state.html" with title=no_batch_title message=no_batch_msg %}
 {% endif %}
+<script>
+(function () {
+  document.querySelectorAll("input.onboarding-file-input[type=file]").forEach(function (inp) {
+    inp.addEventListener("change", function () {
+      var el = document.querySelector("[data-file-hint=\"" + inp.id + "\"]");
+      if (!el) return;
+      if (!inp.files || !inp.files.length) {
+        el.textContent = "";
+        return;
+      }
+      el.textContent = Array.prototype.map.call(inp.files, function (f) { return f.name; }).join(", ");
+    });
+  });
+})();
+</script>
 {% endblock %}

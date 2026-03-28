@@ -111,6 +111,84 @@ def parse_text(path: str) -> ParseResult:
     return _post_process(raw, DocumentType.OTHER)
 
 
+def parse_image(path: str, document_type: DocumentType = DocumentType.PROJECT_BROCHURE) -> ParseResult:
+    """
+    Raster images (JPG, PNG, WebP, etc.): optional OCR via pytesseract + Tesseract binary;
+    otherwise store metadata + short note so ingestion still succeeds and retrieval can match filenames.
+    """
+    p = Path(path)
+    name = p.name
+    try:
+        from PIL import Image
+    except ImportError:
+        return ParseResult(
+            "",
+            ContentLanguage.UNKNOWN,
+            {"error": "Pillow not installed; add Pillow to requirements"},
+            [],
+        )
+
+    try:
+        with Image.open(path) as im:
+            w, h = im.size
+            fmt = (im.format or "unknown") or "unknown"
+            work = im.convert("RGB") if im.mode in ("RGBA", "P", "LA", "CMYK") else im.copy()
+            ocr_text = ""
+            ocr_meta: dict = {}
+            try:
+                from knowledge.ocr_runtime import ocr_pil_image
+
+                ocr_text, ocr_meta = ocr_pil_image(work)
+            except Exception:
+                pass
+    except Exception as e:
+        return ParseResult("", ContentLanguage.UNKNOWN, {"error": str(e)}, [])
+
+    img_meta = {
+        "image": True,
+        "width": w,
+        "height": h,
+        "format": fmt,
+    }
+
+    # Short OCR still gets placeholder path; threshold keeps noise out but allows modest extracts
+    ocr_min_chars = 25
+    if len(ocr_text) >= ocr_min_chars:
+        pr = _post_process(ocr_text, document_type)
+        pr.metadata.update(
+            {
+                **img_meta,
+                "ocr": True,
+                "ocr_lang_used": ocr_meta.get("lang_used"),
+                "ocr_langs_tried": ocr_meta.get("langs_tried"),
+            }
+        )
+        return pr
+
+    note_ar = (
+        "[صورة — {name}]\n"
+        "الأبعاد: {w}×{h} بكسل، الصيغة: {fmt}\n"
+        "هذا المستند صورة؛ للبحث النصي الأفضل استخدم PDF بنص قابل للنسخ.\n"
+        "لاستخراج نص تلقائي من الصور: ثبّت Tesseract OCR على السيرفر، اضبط TESSERACT_CMD في .env إن لزم، ثم نفّذ: python manage.py check_ocr\n"
+        "بعد تفعيل OCR أعد تحليل الملفات القديمة: python manage.py reparse_documents --images-only\n"
+    ).format(name=name, w=w, h=h, fmt=fmt)
+    if ocr_text:
+        note_ar += "\nنص مستخرج (جزئي):\n" + ocr_text[:2000]
+
+    pr = _post_process(note_ar, document_type)
+    pr.metadata.update(
+        {
+            **img_meta,
+            "ocr": bool(ocr_text),
+            "ocr_lang_used": ocr_meta.get("lang_used"),
+            "ocr_langs_tried": ocr_meta.get("langs_tried"),
+        }
+    )
+    if ocr_meta.get("ocr_errors"):
+        pr.metadata["ocr_errors"] = ocr_meta["ocr_errors"]
+    return pr
+
+
 def _csv_to_text(rows: list[dict]) -> str:
     lines = []
     for i, row in enumerate(rows[:500]):  # limit

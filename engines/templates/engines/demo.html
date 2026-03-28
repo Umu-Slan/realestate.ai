@@ -145,11 +145,12 @@
 
     const FETCH_OPTS = { credentials: 'include' };
     let pipelineState = null;
+    let conversationHistoryLoaded = false;
 
     async function fetchWithRetry(url, opts, maxRetries = 3) {
       for (let i = 0; i < maxRetries; i++) {
         try {
-          const res = await fetch(url, { ...opts, ...FETCH_OPTS });
+          const res = await fetch(url, { ...FETCH_OPTS, ...opts });
           if (res.status === 429) {
             const delay = Math.min(2000 * Math.pow(2, i), 8000);
             await new Promise(r => setTimeout(r, delay));
@@ -161,7 +162,7 @@
           await new Promise(r => setTimeout(r, 500 * Math.pow(2, i)));
         }
       }
-      return fetch(url, { ...opts, ...FETCH_OPTS });
+      return fetch(url, { ...FETCH_OPTS, ...opts });
     }
 
     function isArabic(text) {
@@ -333,6 +334,8 @@
     }
 
     async function loadConversationHistory() {
+      if (conversationHistoryLoaded) return;
+      conversationHistoryLoaded = true;
       try {
         const res = await fetchWithRetry('/api/engines/conversation/', { method: 'GET' });
         const data = await res.json().catch(() => ({}));
@@ -340,6 +343,7 @@
           restoreHistory(data.messages);
         }
       } catch (e) {
+        conversationHistoryLoaded = false;
         console.warn('Could not load conversation history:', e);
       }
     }
@@ -449,11 +453,15 @@
 
       sendBtn.disabled = true;
       addLoading();
+      const controller = new AbortController();
+      const chatTimeoutMs = 120000;
+      const chatTimeoutId = setTimeout(function () { controller.abort(); }, chatTimeoutMs);
       try {
         const res = await fetchWithRetry(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
+          signal: controller.signal,
         });
         const data = await res.json().catch(() => ({}));
         if (res.status === 429) {
@@ -480,11 +488,20 @@
         const matchesToShow = recReady ? (data.matches || []) : [];
         addMsg(reply, false, { temperature: temp, next_step: nextStepNorm, matches: matchesToShow, recommendation_ready: recReady });
       } catch (e) {
-        addError('اتصال الشبكة فشل. حاول مرة أخرى.\nNetwork error. Please try again.', () => {
-          sendMessage(msg.trim(), mode, salesMode, isSupport);
-        });
+        var timedOut = e && (e.name === 'AbortError' || String(e.message || '').indexOf('aborted') !== -1);
+        addError(
+          timedOut
+            ? 'انتهت مهلة الانتظار. تحقق من الاتصال أو أعد المحاولة.\nThe request timed out. Check your connection or try again.'
+            : 'اتصال الشبكة فشل. حاول مرة أخرى.\nNetwork error. Please try again.',
+          function () {
+            sendMessage(msg.trim(), mode, salesMode, isSupport);
+          }
+        );
+      } finally {
+        clearTimeout(chatTimeoutId);
+        sendBtn.disabled = false;
+        removeLoading();
       }
-      sendBtn.disabled = false;
     }
 
     function requestProjectRecommendations() {

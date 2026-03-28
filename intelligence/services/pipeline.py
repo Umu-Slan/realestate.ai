@@ -14,6 +14,10 @@ from intelligence.schemas import (
 from intelligence.services.intent_classifier import classify_intent
 from intelligence.services.qualification_extractor import extract_qualification
 from intelligence.services.scoring_engine import score_lead
+from intelligence.services.clarification_bypass import (
+    relax_clarification_routing_if_applicable,
+    should_skip_low_confidence_clarification,
+)
 from intelligence.services.routing import apply_routing_rules, classify_support_category
 
 
@@ -115,7 +119,7 @@ def analyze_message(
             source_channel=source_channel,
         )
 
-    # 5. Routing
+    # 5. Routing (optionally relax clarification when intent/lexical signals are strong)
     routing = apply_routing_rules(
         intent=intent,
         qualification=qualification,
@@ -123,6 +127,13 @@ def analyze_message(
         customer_type=customer_type,
         is_angry=is_angry,
         exact_price_available=exact_price_available,
+    )
+    routing = relax_clarification_routing_if_applicable(
+        routing,
+        intent,
+        scoring,
+        message_text,
+        history,
     )
 
     # 6. Support category (for existing customers)
@@ -138,7 +149,9 @@ def analyze_message(
         (qualification.confidence == "low" and len(qualification.missing_fields or []) > 4)
     )
     requires_clarification = routing.requires_human_review or (
-        scoring.confidence == "low" and customer_type in (CustomerType.NEW_LEAD.value, "new_lead")
+        scoring.confidence == "low"
+        and customer_type in (CustomerType.NEW_LEAD.value, "new_lead")
+        and not should_skip_low_confidence_clarification(intent, message_text, scoring, history)
     )
 
     return ConversationIntelligenceResult(

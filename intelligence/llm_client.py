@@ -20,9 +20,12 @@ def call_llm(
     system_prompt: str,
     user_prompt: str,
     model: Optional[str] = None,
+    *,
+    timeout: float = 30.0,
 ) -> dict[str, Any] | None:
     """
     Call LLM with structured output. Returns parsed JSON or None on failure.
+    Always passes a request timeout so the HTTP client cannot hang indefinitely.
     """
     api_key = getattr(settings, "OPENAI_API_KEY", "") or ""
     if not api_key:
@@ -33,6 +36,7 @@ def call_llm(
         return None
 
     model = model or getattr(settings, "LLM_MODEL", "gpt-4o-mini")
+    to = float(getattr(settings, "LLM_TIMEOUT_SECONDS", timeout) or timeout)
     kwargs: dict[str, Any] = {
         "model": model,
         "messages": [
@@ -40,6 +44,7 @@ def call_llm(
             {"role": "user", "content": user_prompt},
         ],
         "temperature": 0.2,
+        "timeout": to,
     }
 
     try:

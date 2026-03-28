@@ -148,6 +148,7 @@ class SalesStrategyAgent:
             from engines.objection_library import detect_objection
             from orchestration.next_action import compute_next_best_action
             from intelligence.services.scoring_engine import score_lead
+            from intelligence.services.clarification_bypass import relax_clarification_routing_if_applicable
             from intelligence.services.routing import apply_routing_rules, classify_support_category
             from intelligence.schemas import QualificationExtraction, IntentResult, ScoringResult, ReasonCode
 
@@ -203,6 +204,13 @@ class SalesStrategyAgent:
                 exact_price_available=context.retrieval_output.get("has_verified_pricing", True)
                 if context.retrieval_output
                 else True,
+            )
+            routing_decision = relax_clarification_routing_if_applicable(
+                routing_decision,
+                intent,
+                scoring_result,
+                context.message_text or "",
+                context.conversation_history or [],
             )
             support_category = ""
             if customer_type in ("support_customer", "existing_customer"):

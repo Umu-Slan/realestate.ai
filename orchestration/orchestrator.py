@@ -10,7 +10,7 @@ from django.conf import settings
 
 from orchestration.states import PipelineStage, RunStatus
 from orchestration.schemas import OrchestrationRun, IntakeInput
-from orchestration.policy_engine import apply_policy_engine
+from orchestration.policy_engine import apply_policy_engine, intent_primary_is_strict_price_inquiry
 from orchestration.next_action import compute_next_best_action
 from orchestration.handoff import build_handoff_summary
 from orchestration.retrieval_planner import plan_retrieval
@@ -419,7 +419,7 @@ def run_orchestration(
             # Post-retrieval: set safe_response_policy and unavailable_data for guardrails
             intent_primary = (run.intent_result.get("primary") or "").lower()
             msg_lower = (run.intake.normalized_content or "").lower()
-            is_price_inquiry = "price" in intent_primary
+            is_price_inquiry = intent_primary_is_strict_price_inquiry(intent_primary)
             is_availability_inquiry = (
                 "availability" in intent_primary or
                 any(kw in msg_lower for kw in ("متوفر", "متبقى", "وحدة متبقية", "availability", "units left", "كم وحدة"))
@@ -517,6 +517,7 @@ def run_orchestration(
                     retrieval_context=retrieval_ctx,
                     has_verified_pricing=has_verified_pricing,
                     use_llm=use_llm,
+                    channel=channel,
                 )
             elif response_mode == "support" or _is_support_routing(run):
                 from engines.support_engine import generate_support_response
@@ -529,6 +530,7 @@ def run_orchestration(
                     is_angry=is_angry,
                     conversation_history=hist,
                     use_llm=use_llm,
+                    channel=channel,
                 )
             else:
                 try:
@@ -568,6 +570,8 @@ def run_orchestration(
             intent=run.intent_result,
             customer_type=run.routing.get("customer_type", "new_lead"),
             requires_clarification=intel.requires_clarification,
+            user_message=run.intake.normalized_content or "",
+            conversation_history=conversation_history,
         )
         run.policy_decision = {
             "allow_response": policy.allow_response,

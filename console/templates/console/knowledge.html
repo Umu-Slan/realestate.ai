@@ -4,7 +4,7 @@
 {% block content %}
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
   <h1 class="text-2xl font-bold text-slate-800">{% trans "Knowledge Documents" %}</h1>
-  <a href="{% url 'onboarding:upload_documents' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition">
+  <a href="{% url 'onboarding:dashboard' %}#documents" class="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
     {% trans "Upload documents" %}
   </a>
@@ -45,13 +45,13 @@
           <span class="px-2 py-0.5 rounded text-xs bg-slate-100">{{ d.document_type }}</span>
           <span class="px-2 py-0.5 rounded text-xs {% if d.status == 'indexed' %}bg-green-100 text-green-800{% elif d.status == 'processing' %}bg-amber-100 text-amber-800{% else %}bg-slate-100 text-slate-700{% endif %}">{{ d.status }}</span>
           <span class="text-xs text-slate-500">v{{ d.version }}</span>
-          <span class="text-xs text-slate-500">{{ d._chunk_count|default:0 }} {% trans "chunks" %}</span>
+          <span class="text-xs text-slate-500">{{ d.chunk_count|default:0 }} {% trans "chunks" %}</span>
           {% if d.source_of_truth %}<span class="px-1.5 py-0.5 rounded text-xs bg-teal-100 text-teal-800">{% trans "Source of truth" %}</span>{% endif %}
         </div>
         {% if d.verification_status %}<p class="text-xs text-slate-500 mt-1">{% trans "Verification" %}: {{ d.verification_status }}</p>{% endif %}
       </div>
       <div class="flex items-center gap-2 shrink-0">
-        {% if d._is_fresh %}<span class="text-green-600" title="{% trans 'Fresh' %}">&#10003;</span>{% else %}<span class="text-amber-600">&#9675;</span>{% endif %}
+        {% if d.is_fresh %}<span class="text-green-600" title="{% trans 'Fresh' %}">&#10003;</span>{% else %}<span class="text-amber-600">&#9675;</span>{% endif %}
         <a href="{% url 'console:knowledge_doc_detail' d.id %}" class="px-3 py-1.5 text-sm bg-teal-100 text-teal-800 rounded-lg hover:bg-teal-200">{% trans "View" %}</a>
       </div>
     </div>
@@ -62,8 +62,8 @@
 {% trans "No documents yet" as no_doc_title %}
 {% trans "Upload brochures, FAQs, and project docs so the AI can answer customer questions accurately." as no_doc_msg %}
 {% trans "Upload documents" as action_label %}
-{% url 'onboarding:upload_documents' as upload_url %}
-{% include "console/includes/empty_state.html" with title=no_doc_title message=no_doc_msg icon="documents" action_url=upload_url action_label=action_label %}
+{% url 'onboarding:dashboard' as upload_url %}
+{% include "console/includes/empty_state.html" with title=no_doc_title message=no_doc_msg icon="documents" action_url=upload_url action_anchor="documents" action_label=action_label %}
 {% endif %}
 
 <div class="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">

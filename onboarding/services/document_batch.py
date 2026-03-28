@@ -34,7 +34,22 @@ def _save_uploaded_file(f, upload_dir):
 
 
 def _supported_ext(path):
-    return path.suffix.lower() in (".pdf", ".csv", ".xlsx", ".xls", ".txt", ".md")
+    return path.suffix.lower() in (
+        ".pdf",
+        ".csv",
+        ".xlsx",
+        ".xls",
+        ".txt",
+        ".md",
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp",
+        ".gif",
+        ".tif",
+        ".tiff",
+        ".bmp",
+    )
 
 
 def run_document_batch(

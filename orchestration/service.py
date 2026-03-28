@@ -31,7 +31,8 @@ def _sanitize_for_customer(text: str, user_content: str = "") -> str:
         from engines.response_sanitizer import sanitize_customer_response
         from engines.lang_utils import detect_response_language
         cleaned = sanitize_customer_response(text.strip())
-        if cleaned and len(cleaned.strip()) >= 10:
+        # Short valid replies (e.g. "تمام.") should not be replaced by generic filler
+        if cleaned and len(cleaned.strip()) >= 2:
             return cleaned
         lang = detect_response_language(user_content) if user_content else "ar"
         if lang == "ar":

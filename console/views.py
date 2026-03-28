@@ -681,7 +681,15 @@ def recommendations_view(request):
 
     recs = []
     try:
-        if os.environ.get("VERCEL") != "1":
+        # Local/dev: auto-seed sample rows when empty. On Vercel this was skipped to avoid
+        # surprise writes; set ALLOW_SAMPLE_RECOMMENDATIONS=1 in env for client demo deploys.
+        _vercel = os.environ.get("VERCEL") == "1"
+        _allow_seed = os.environ.get("ALLOW_SAMPLE_RECOMMENDATIONS", "").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+        if not _vercel or _allow_seed:
             _ensure_recommendation_samples()
         recs = list(
             Recommendation.objects.select_related(
@@ -722,11 +730,11 @@ def knowledge(request):
     if verification:
         qs = qs.filter(verification_status=verification)
     from django.db.models import Count
-    qs = qs.annotate(_chunk_count=Count("chunks"))
+    qs = qs.annotate(chunk_count=Count("chunks"))
     docs = list(qs[:50])
-    # Compute freshness per doc for display
+    # Compute freshness per doc for display (public attrs: templates forbid leading _)
     for d in docs:
-        d._is_fresh = RetrievalPolicy.is_fresh(d)
+        d.is_fresh = RetrievalPolicy.is_fresh(d)
     return render(request, "console/knowledge.html", {
         "documents": docs,
         "document_types": DocumentType.choices,
@@ -742,7 +750,7 @@ def knowledge_doc_detail(request, pk):
     # Enrich chunks with retrieval metadata (from chunk metadata or document)
     meta_default = lambda ch, key, default: (ch.metadata or {}).get(key, default)
     for ch in chunks:
-        ch._retrieval_meta = {
+        ch.retrieval_meta = {
             "document_type": meta_default(ch, "document_type", doc.document_type),
             "verification_status": meta_default(ch, "verification_status", doc.verification_status),
             "access_level": meta_default(ch, "access_level", getattr(doc, "access_level", "internal")),

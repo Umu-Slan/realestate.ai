@@ -36,11 +36,42 @@ class Command(BaseCommand):
             return
 
         files = []
+        _ingest_exts = (
+            ".pdf",
+            ".csv",
+            ".xlsx",
+            ".xls",
+            ".txt",
+            ".md",
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".gif",
+            ".tif",
+            ".tiff",
+            ".bmp",
+        )
         if path.is_file():
-            if path.suffix.lower() in (".pdf", ".csv", ".xlsx", ".xls", ".txt", ".md"):
+            if path.suffix.lower() in _ingest_exts:
                 files.append(path)
         else:
-            for ext in ["*.pdf", "*.csv", "*.xlsx", "*.xls", "*.txt", "*.md"]:
+            for ext in [
+                "*.pdf",
+                "*.csv",
+                "*.xlsx",
+                "*.xls",
+                "*.txt",
+                "*.md",
+                "*.jpg",
+                "*.jpeg",
+                "*.png",
+                "*.webp",
+                "*.gif",
+                "*.tif",
+                "*.tiff",
+                "*.bmp",
+            ]:
                 files.extend(path.glob(ext))
 
         if not files:

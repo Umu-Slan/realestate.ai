@@ -100,7 +100,7 @@ Containers start in dependency order:
    - `collectstatic --noinput`
    - Gunicorn
 
-**Celery worker/beat**: Not required. No background tasks use Celery today. Redis is used for optional Celery broker; app runs fine without a worker.
+**Celery worker**: `docker-compose.production.yml` includes a `celery` service (`celery -A config.celery worker`). The codebase currently has no `@shared_task` jobs; the worker stays idle but keeps Redis/broker wiring ready. To save resources, remove or comment out the `celery` service in the compose file.
 
 ### 3.3 In-Container Startup Sequence
 
@@ -202,10 +202,10 @@ Django does **not** serve media when `DEBUG=False`. Options:
 | Component | Required? | Notes |
 |-----------|-----------|-------|
 | Redis | Optional | Used as Celery broker; health checks tolerate absence |
-| Celery worker | **No** | No `@shared_task` or `apply_async` in codebase |
+| Celery worker | Optional | Compose includes `celery` service; idle until tasks exist |
 | Celery beat | **No** | No periodic tasks defined |
 
-Redis can be omitted for minimal deploys; the app runs without it. If you add Celery tasks later, add a worker service and keep Redis.
+Redis: keep it in the production compose stack for Celery and health checks. Minimal single-container deploys without Redis are possible but not the default production compose file.
 
 ---
 

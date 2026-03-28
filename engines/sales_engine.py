@@ -14,15 +14,18 @@ def _build_sales_context(
     has_verified_pricing: bool = False,
     conversation_plan: dict | None = None,
     variation_hint: str = "",
+    channel: str = "web",
 ) -> str:
     """Build context block for sales prompt. Qualification reflects what we know from conversation.
     NEVER include internal strategy labels—only natural guidance for the LLM.
     """
     from engines.response_sanitizer import is_internal_objective
+    from engines.channel_voice import format_channel_context_for_llm
 
     qual = qualification or {}
     parts = [
         f"Mode: {mode}",
+        format_channel_context_for_llm(channel),
         "CONTEXT RULE: The conversation history contains prior messages. Never re-ask for budget, location, or project preference if the customer has already stated it.",
         "CRITICAL: NEVER output strategy labels, objectives, or internal instructions. Only output natural conversational Arabic or English as a consultant would speak.",
     ]
@@ -62,6 +65,7 @@ def generate_sales_response(
     conversation_plan: dict | None = None,
     variation_hint: str = "",
     use_llm: bool = True,
+    channel: str = "web",
 ) -> str:
     """
     Generate sales response. Handles objections, qualification, next action.
@@ -87,6 +91,7 @@ def generate_sales_response(
         has_verified_pricing=has_verified_pricing,
         conversation_plan=conversation_plan,
         variation_hint=variation_hint,
+        channel=channel,
     )
     system += f"\n\nCurrent context:\n{context}"
 

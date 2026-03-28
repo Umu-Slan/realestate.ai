@@ -196,6 +196,7 @@ class AuditAction(models.TextChoices):
     CRM_IMPORTED = "crm_imported", "CRM Imported"
     KNOWLEDGE_INGESTED = "knowledge_ingested", "Knowledge Ingested"
     KNOWLEDGE_REINDEXED = "knowledge_reindexed", "Knowledge Reindexed"
+    KNOWLEDGE_REPARSED = "knowledge_reparsed", "Knowledge Reparsed from file"
     KNOWLEDGE_VERIFIED = "knowledge_verified", "Knowledge Verified"
     IDENTITY_AUTO_MERGED = "identity_auto_merged", "Identity Auto Merged"
     IDENTITY_MANUAL_MERGED = "identity_manual_merged", "Identity Manual Merged"

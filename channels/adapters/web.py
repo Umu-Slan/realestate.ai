@@ -3,6 +3,7 @@ from typing import Any, Optional
 
 from channels.schema import NormalizedInboundMessage
 from channels.adapters.base import BaseChannelAdapter
+from engines.channel_voice import UNIVERSAL_TEXT_CHANNELS
 
 
 def _safe_int(val: Any, default: Optional[int] = None) -> Optional[int]:
@@ -25,7 +26,7 @@ class WebChannelAdapter(BaseChannelAdapter):
         if not content:
             raise ValueError("content is required")
         channel = str(raw_payload.get("channel", "web")).lower()
-        if channel not in ("web", "demo"):
+        if channel not in UNIVERSAL_TEXT_CHANNELS:
             channel = "web"
         meta = {
             "conversation_history": raw_payload.get("conversation_history"),

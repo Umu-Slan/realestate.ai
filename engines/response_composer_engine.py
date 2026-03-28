@@ -99,6 +99,7 @@ def compose_sales_response(
     has_verified_pricing: bool = False,
     use_llm: bool = True,
     lang: str | None = None,
+    channel: str = "web",
 ) -> tuple[str, str, str]:
     """
     Compose natural sales response.
@@ -179,6 +180,7 @@ def compose_sales_response(
         },
         variation_hint=variation_hint,
         use_llm=use_llm,
+        channel=channel,
     )
 
     reply = sanitize_customer_response(reply)
@@ -227,6 +229,7 @@ def compose_support_response(
     routing: dict,
     conversation_history: list[dict] | None = None,
     use_llm: bool = True,
+    channel: str = "web",
 ) -> tuple[str, str, str]:
     """Compose support response. Returns (reply_text, cta, reasoning_summary)."""
     from engines.support_engine import generate_support_response
@@ -239,6 +242,7 @@ def compose_support_response(
         is_angry=False,
         conversation_history=conversation_history or [],
         use_llm=use_llm,
+        channel=channel,
     )
     cta = "move_to_human" if routing.get("escalation_ready") else "nurture"
     reasoning = f"support | category={support_cat} | mode={mode} | cta={cta}"

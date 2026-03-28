@@ -8,8 +8,11 @@ from engines.lang_utils import detect_response_language
 def _build_support_context(
     category: str = "",
     is_angry: bool = False,
+    channel: str = "web",
 ) -> str:
-    parts = []
+    from engines.channel_voice import format_channel_context_for_llm
+
+    parts = [format_channel_context_for_llm(channel)]
     if category:
         parts.append(f"Issue category: {category}")
     if is_angry:
@@ -25,6 +28,7 @@ def generate_support_response(
     is_angry: bool = False,
     conversation_history: list[dict] | None = None,
     use_llm: bool = True,
+    channel: str = "web",
 ) -> str:
     """
     Generate support response. Calm, respectful, collect info, escalate when sensitive.
@@ -33,7 +37,7 @@ def generate_support_response(
     history = conversation_history or []
 
     system = get_system_prompt(mode)
-    context = _build_support_context(category=category, is_angry=is_angry)
+    context = _build_support_context(category=category, is_angry=is_angry, channel=channel)
     if context:
         system += f"\n\nContext:\n{context}"
 

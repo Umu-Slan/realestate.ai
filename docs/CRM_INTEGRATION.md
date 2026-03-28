@@ -78,6 +78,22 @@ CRM Export (CSV/Excel) → Adapter (CSVCRMAdapter / ExcelCRMAdapter)
 | GET | `/api/leads/identity/candidates/` | Pending merge candidates |
 | POST | `/api/leads/identity/merge/<id>/approve/` | Approve merge |
 | POST | `/api/leads/identity/merge/<id>/reject/` | Reject merge |
+| POST | `/api/crm/events/` | Inbound lead upsert from company CRM (webhook; see below) |
+
+### Bidirectional CRM with the company stack
+
+**Historical + incoming data (into this platform)**  
+- Bulk: `POST /api/crm/import/` (CSV/Excel) as today.  
+- Streaming / real time: `POST /api/crm/events/` with JSON body (`crm_id` required; `phone`/`email`/`username` per row validation). Set `CRM_INBOUND_WEBHOOK_SECRET` in `.env` and send `Authorization: Bearer <secret>` or `X-Webhook-Secret: <secret>`. If the secret is unset, only `DEBUG=True` accepts traffic (unsafe for production).
+
+**AI outcomes (out to the company CRM / middleware)**  
+After each conversation sync, internal `CRMRecord` is updated as today. Optionally notify your system:  
+- `EXTERNAL_CRM_PUSH_ENABLED=True`  
+- `EXTERNAL_CRM_PUSH_MODE=webhook`  
+- `EXTERNAL_CRM_WEBHOOK_URL=https://your-middleware.example/hooks/realestate-ai`  
+- `EXTERNAL_CRM_WEBHOOK_SECRET` (optional Bearer on outbound POST)  
+
+Payload shape: `{ "event": "ai_crm_sync", "crm_record_id", "record": { ...fields }, "delta": { ... } }`. Wire this URL to Zapier, n8n, or a small service that calls HubSpot / Zoho / Dynamics APIs.
 
 ---
 

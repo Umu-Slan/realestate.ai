@@ -4,8 +4,11 @@ Onboarding console views: upload documents, structured data, CRM; inspect batche
 import uuid
 from pathlib import Path
 
+from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
-from django.views.decorators.http import require_http_methods, require_POST
+from django.urls import reverse
+from django.utils.translation import gettext as _
+from django.views.decorators.http import require_http_methods
 from django.conf import settings
 from onboarding.models import OnboardingBatch, OnboardingItem, OnboardingBatchType
 from onboarding.services import run_document_batch, import_structured_csv
@@ -13,6 +16,7 @@ from knowledge.models import IngestedDocument, Project
 from companies.models import Company
 from core.enums import DocumentType
 from crm.services.import_service import import_crm_file
+from knowledge.ocr_runtime import get_ocr_status
 
 
 def _default_company():
@@ -33,15 +37,22 @@ def onboarding_dashboard(request):
         "document_types": document_types,
         "projects": projects,
         "nav_section": "onboarding",
+        "ocr_status": get_ocr_status(),
     })
 
 
-@require_POST
+@require_http_methods(["GET", "POST"])
 def upload_documents(request):
-    """Upload and ingest documents."""
+    """Upload and ingest documents. GET redirects to dashboard (form is there)."""
+    if request.method == "GET":
+        return redirect("onboarding:dashboard")
     files = request.FILES.getlist("files")
     if not files:
-        return redirect("onboarding:dashboard")
+        messages.warning(
+            request,
+            _("Choose one or more files first, then press Upload & Ingest."),
+        )
+        return redirect(reverse("onboarding:dashboard") + "#documents")
     doc_type = request.POST.get("document_type", "project_pdf")
     project_id = request.POST.get("project_id") or None
     if project_id:
@@ -70,12 +81,21 @@ def upload_documents(request):
     return redirect("onboarding:batch_detail", pk=batch.id)
 
 
-@require_POST
+@require_http_methods(["GET", "POST"])
 def upload_structured(request):
     """Upload and import structured project CSV."""
-    f = request.FILES.get("file")
-    if not f or not f.name.lower().endswith((".csv", ".xlsx", ".xls")):
+    if request.method == "GET":
         return redirect("onboarding:dashboard")
+    f = request.FILES.get("file")
+    if not f:
+        messages.warning(request, _("Choose a CSV file first, then press Import CSV."))
+        return redirect(reverse("onboarding:dashboard") + "#structured")
+    if not f.name.lower().endswith((".csv", ".xlsx", ".xls")):
+        messages.warning(
+            request,
+            _("Use a .csv file for structured import (Excel support is limited)."),
+        )
+        return redirect(reverse("onboarding:dashboard") + "#structured")
 
     upload_dir = Path(settings.MEDIA_ROOT) / "onboarding" / "uploads"
     upload_dir.mkdir(parents=True, exist_ok=True)
@@ -116,12 +136,15 @@ def upload_structured(request):
     return redirect("onboarding:batch_detail", pk=batch.id)
 
 
-@require_POST
+@require_http_methods(["GET", "POST"])
 def upload_crm(request):
     """Upload and import CRM export."""
+    if request.method == "GET":
+        return redirect("onboarding:dashboard")
     f = request.FILES.get("file")
     if not f:
-        return redirect("onboarding:dashboard")
+        messages.warning(request, _("Choose a CRM file first, then press Import CRM."))
+        return redirect(reverse("onboarding:dashboard") + "#crm")
 
     upload_dir = Path(settings.MEDIA_ROOT) / "onboarding" / "uploads"
     upload_dir.mkdir(parents=True, exist_ok=True)
@@ -164,9 +187,11 @@ def batch_detail(request, pk):
     })
 
 
-@require_POST
+@require_http_methods(["GET", "POST"])
 def reindex_documents(request):
-    """Reindex documents. POST body: document_ids (optional) or all."""
+    """Reindex documents. POST only; GET redirects (avoid accidental reindex)."""
+    if request.method == "GET":
+        return redirect("onboarding:dashboard")
     from knowledge.embedding import embed_chunks
 
     ids = request.POST.getlist("document_ids") or request.GET.getlist("document_ids")

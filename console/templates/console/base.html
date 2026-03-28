@@ -158,6 +158,13 @@
 
     <!-- Content -->
     <main class="flex-1 overflow-auto p-4 lg:p-6">
+      {% if messages %}
+      <div class="mb-4 space-y-2" role="status">
+        {% for message in messages %}
+        <div class="rounded-lg px-4 py-3 text-sm border {% if message.tags == 'error' %}bg-red-50 text-red-800 border-red-100{% elif message.tags == 'warning' %}bg-amber-50 text-amber-900 border-amber-100{% else %}bg-teal-50 text-teal-900 border-teal-100{% endif %}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
       {% block content %}{% endblock %}
     </main>
   </div>
@@ -239,7 +246,7 @@
       </ol>
       <div class="flex gap-3">
         <button type="button" onclick="closeOnboarding()" class="px-5 py-2.5 bg-teal-600 text-white rounded-xl font-medium hover:bg-teal-700 transition">{% trans "Get started" %}</button>
-        <a href="{% url 'onboarding:upload_structured' %}" class="px-5 py-2.5 border border-slate-200 rounded-xl font-medium text-slate-700 hover:bg-slate-50 transition">{% trans "Upload projects" %}</a>
+        <a href="{% url 'onboarding:dashboard' %}#structured" class="px-5 py-2.5 border border-slate-200 rounded-xl font-medium text-slate-700 hover:bg-slate-50 transition">{% trans "Upload projects" %}</a>
       </div>
     </div>
   </div>

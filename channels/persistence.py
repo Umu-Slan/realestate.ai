@@ -16,6 +16,47 @@ if TYPE_CHECKING:
     from channels.schema import NormalizedInboundMessage
 
 
+def _external_id_for_connector(connector: str, external_id: str) -> str:
+    """Stable unique key per channel (telegram:123, web:session, …)."""
+    ext = (external_id or "").strip()
+    if not ext:
+        ext = "anon"
+    c = (connector or "web").lower()
+    if ":" in ext:
+        if ext.startswith(f"{c}:") or (c in ("web", "demo") and ext.startswith("web:")):
+            return ext
+        if not ext.startswith("web:"):
+            return ext
+    if c in ("web", "demo"):
+        if ext.startswith("web:"):
+            return ext
+        return f"web:{ext}"
+    return f"{c}:{ext}"
+
+
+def _conversation_db_channel(connector: str) -> tuple[str, dict]:
+    """Map connector string to Conversation.channel + extra metadata."""
+    c = (connector or "web").lower()
+    if c == "demo":
+        return SourceChannel.DEMO, {}
+    if c == "web":
+        return SourceChannel.WEB, {}
+    if c == "instagram":
+        return SourceChannel.INSTAGRAM, {}
+    if c == "email":
+        return SourceChannel.EMAIL, {}
+    if c == "phone":
+        return SourceChannel.PHONE, {}
+    return SourceChannel.API, {"connector": c}
+
+
+def _find_conversation_for_customer(customer: Customer, db_channel: str, connector: str):
+    qs = Conversation.objects.filter(customer=customer, channel=db_channel)
+    if db_channel == SourceChannel.API:
+        qs = qs.filter(metadata__connector=connector)
+    return qs.order_by("-created_at").first()
+
+
 def get_or_create_customer_conversation(
     normalized_msg: "NormalizedInboundMessage",
 ) -> tuple[Customer, Conversation]:
@@ -37,79 +78,82 @@ def get_or_create_web_customer_conversation_from_normalized(
     normalized_msg: "NormalizedInboundMessage",
 ) -> tuple[Customer, Conversation]:
     """
-    Get or create Customer and Conversation for web/demo channel.
-    Uses external_id, conversation_id, or customer_id from normalized message.
+    Get or create Customer and Conversation for any JSON-backed connector
+    (web, demo, Telegram, Meta, SMS gateway, etc.). WhatsApp uses a separate path.
     """
-    channel = SourceChannel.WEB
+    connector = (normalized_msg.source_channel or "web").lower()
+    db_channel, _ch_meta = _conversation_db_channel(connector)
+    ext_key = _external_id_for_connector(connector, normalized_msg.external_id)
     conv_id = normalized_msg.conversation_id
     cust_id = normalized_msg.customer_id
-    external_id = (normalized_msg.external_id or "").strip()
-    if not external_id:
-        external_id = f"web:anon"
-    if not external_id.startswith("web:"):
-        external_id = f"web:{external_id}"
 
     from companies.services import get_default_company
     from companies.models import Company
 
     company = get_default_company() or (Company.objects.first() if Company.objects.exists() else None)
     if not company:
-        raise ValueError("No company available for web conversation")
+        raise ValueError("No company available for conversation")
 
     with transaction.atomic():
         if conv_id:
-            conv = Conversation.objects.filter(
-                pk=conv_id,
-                channel=channel,
-            ).select_related("customer", "customer__identity").first()
+            conv = Conversation.objects.filter(pk=conv_id).select_related(
+                "customer", "customer__identity"
+            ).first()
             if conv:
                 return conv.customer, conv
         if cust_id:
             cust = Customer.objects.filter(pk=cust_id).select_related("identity").first()
             if cust:
-                conv = (
-                    Conversation.objects.filter(customer=cust, channel=channel)
-                    .order_by("-created_at")
-                    .first()
-                )
+                conv = _find_conversation_for_customer(cust, db_channel, connector)
                 if not conv:
+                    meta = {"source": "omnichannel", "connector": connector}
                     conv = Conversation.objects.create(
                         customer=cust,
                         company=company,
-                        channel=channel,
-                        metadata={"source": "web_chat"},
+                        channel=db_channel,
+                        metadata=meta,
                     )
                 return cust, conv
 
-        identity, _ = CustomerIdentity.objects.get_or_create(
-            external_id=external_id,
+        identity, created = CustomerIdentity.objects.get_or_create(
+            external_id=ext_key,
             defaults={
-                "name": normalized_msg.name or "Web Visitor",
+                "name": normalized_msg.name or "Visitor",
                 "phone": normalized_msg.phone or "",
                 "email": normalized_msg.email or "",
-                "metadata": {"source": "web_chat", "channel": "web"},
+                "metadata": {"source": "omnichannel", "connector": connector},
             },
         )
+        if not created:
+            upd = []
+            if normalized_msg.name and (not identity.name or identity.name == "Visitor"):
+                identity.name = normalized_msg.name
+                upd.append("name")
+            if normalized_msg.phone and not identity.phone:
+                identity.phone = normalized_msg.phone
+                upd.append("phone")
+            if normalized_msg.email and not identity.email:
+                identity.email = normalized_msg.email
+                upd.append("email")
+            if upd:
+                identity.save(update_fields=upd + ["updated_at"])
+
         customer, _ = Customer.objects.get_or_create(
             identity=identity,
             defaults={
                 "customer_type": CustomerType.NEW_LEAD,
-                "source_channel": channel,
+                "source_channel": db_channel,
                 "company": company,
-                "metadata": {"web_chat": True},
+                "metadata": {"connector": connector, "omnichannel": True},
             },
         )
-        conversation = (
-            Conversation.objects.filter(customer=customer, channel=channel)
-            .order_by("-created_at")
-            .first()
-        )
+        conversation = _find_conversation_for_customer(customer, db_channel, connector)
         if not conversation:
             conversation = Conversation.objects.create(
                 customer=customer,
                 company=company,
-                channel=channel,
-                metadata={"source": "web_chat"},
+                channel=db_channel,
+                metadata={"source": "omnichannel", "connector": connector},
             )
     return customer, conversation
 

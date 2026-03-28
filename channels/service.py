@@ -9,12 +9,14 @@ from typing import Any, Optional
 from channels.schema import NormalizedInboundMessage
 from channels.adapters.web import WebChannelAdapter
 from channels.adapters.whatsapp import WhatsAppChannelAdapter
+from engines.channel_voice import UNIVERSAL_TEXT_CHANNELS
 
 logger = logging.getLogger(__name__)
 
+_WEB = WebChannelAdapter()
 ADAPTERS = {
-    "web": WebChannelAdapter(),
-    "demo": WebChannelAdapter(),
+    "web": _WEB,
+    "demo": _WEB,
     "whatsapp": WhatsAppChannelAdapter(),
 }
 
@@ -31,10 +33,15 @@ def get_whatsapp_provider():
 
 
 def get_adapter(channel: str):
-    adapter = ADAPTERS.get((channel or "web").lower())
-    if not adapter:
-        adapter = WebChannelAdapter()
-    return adapter
+    """
+    Resolve adapter. WhatsApp uses Meta webhook shape; all UNIVERSAL_TEXT_CHANNELS use the web JSON adapter.
+    """
+    key = (channel or "web").lower()
+    if key in ADAPTERS:
+        return ADAPTERS[key]
+    if key in UNIVERSAL_TEXT_CHANNELS:
+        return _WEB
+    return _WEB
 
 
 def normalize_inbound(channel: str, raw_payload: dict[str, Any]) -> NormalizedInboundMessage:

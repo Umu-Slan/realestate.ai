@@ -265,3 +265,15 @@ def test_safe_language_for_unverified_fact():
     assert "sales" in en.lower() or "confirm" in en.lower()
     empty = get_safe_language_for_fact("pricing", has_value=True, is_verified=True, lang="ar")
     assert empty == ""
+
+
+def test_get_ocr_status_structure():
+    from knowledge.ocr_runtime import get_ocr_status
+
+    s = get_ocr_status()
+    assert "pytesseract" in s
+    assert "tesseract" in s
+    assert "error" in s
+    assert "doc_path" in s
+    assert isinstance(s["pytesseract"], bool)
+    assert isinstance(s["tesseract"], bool)

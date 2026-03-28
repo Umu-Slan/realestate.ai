@@ -10,6 +10,8 @@ from orchestration.policy_engine import (
     apply_policy_engine,
     ResponsePolicy,
     GuardrailViolation,
+    intent_primary_is_strict_price_inquiry,
+    is_greeting_or_small_talk,
 )
 from orchestration.next_action import compute_next_best_action, NextBestAction
 from orchestration.handoff import build_handoff_summary
@@ -94,6 +96,67 @@ def test_guardrail_unverified_price():
     assert GuardrailViolation.UNVERIFIED_EXACT_PRICE in violations
 
 
+def test_guardrail_allows_budget_echo_ar():
+    """Repeating customer's stated budget is not treated as unverified listing price."""
+    violations = check_guardrails(
+        "تمام، فهمت إنك تفضل ٣ غرف نوم وميزانيتك حوالي ٧ مليون جنيه. أي منطقة تفضلها؟",
+        has_verified_pricing=False,
+    )
+    assert GuardrailViolation.UNVERIFIED_EXACT_PRICE not in violations
+
+
+def test_guardrail_allows_qualification_budget_recap_ar():
+    """Mock/composer recap of known budget range (EGP) is not a listing price."""
+    violations = check_guardrails(
+        "جميل — واضح إن نطاق **6500000-7500000 EGP** ومنطقة **الشيخ زايد** شكلهم مناسبين لبحثك.",
+        has_verified_pricing=False,
+    )
+    assert GuardrailViolation.UNVERIFIED_EXACT_PRICE not in violations
+
+
+def test_is_greeting_or_small_talk_ar():
+    assert is_greeting_or_small_talk("مرحبا") is True
+    assert is_greeting_or_small_talk("مرحباً") is True
+    assert is_greeting_or_small_talk("مرحبا عايز شقة") is False
+
+
+def test_policy_greeting_skips_price_boilerplate_when_draft_has_listing_price():
+    """Pure hello + draft with unverified listing price -> warm opener, not long price disclaimer."""
+    decision = apply_policy_engine(
+        "الوحدة تبدأ من 2,500,000 جنيه.",
+        has_verified_pricing=False,
+        routing={},
+        intent={"primary": "other"},
+        user_message="مرحبا",
+    )
+    assert decision.rewrite_to_safe
+    assert "الأسعار الدقيقة للوحدات" not in (decision.safe_rewrite or "")
+    assert "ميزانية" in (decision.safe_rewrite or "") or "budget" in (decision.safe_rewrite or "").lower()
+
+
+def test_policy_greeting_with_budget_recap_uses_draft_not_price_disclaimer():
+    """Greeting on a turn that only recaps known budget should not trigger price safe-rewrite."""
+    recap = (
+        "جميل — واضح إن نطاق **6500000-7500000 EGP** ومنطقة **الشيخ زايد** شكلهم مناسبين لبحثك."
+    )
+    decision = apply_policy_engine(
+        recap,
+        has_verified_pricing=False,
+        routing={},
+        intent={"primary": "other"},
+        user_message="مرحبا",
+    )
+    assert not decision.rewrite_to_safe
+    assert GuardrailViolation.UNVERIFIED_EXACT_PRICE not in decision.violations
+
+
+def test_intent_price_not_substring_of_property_purchase():
+    """property_purchase must not activate price-only safe mode via substring."""
+    assert intent_primary_is_strict_price_inquiry("property_purchase") is False
+    assert intent_primary_is_strict_price_inquiry("price_inquiry") is True
+    assert intent_primary_is_strict_price_inquiry("pricing") is True
+
+
 def test_guardrail_legal_advice():
     """Legal advice triggers guardrail."""
     violations = check_guardrails("Legal advice: you must sign the contract")
@@ -165,6 +228,7 @@ def test_policy_engine_unverified_pricing_request():
         has_verified_pricing=False,
         routing={},
         intent={"primary": "price_inquiry"},
+        user_message="How much is the unit?",
     )
     assert decision.rewrite_to_safe
     assert decision.safe_rewrite

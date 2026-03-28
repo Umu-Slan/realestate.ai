@@ -49,14 +49,26 @@ def run_sales_scenario(scenario, use_llm: bool = True):
     return actual, elapsed_ms
 
 
-def run_sales_evaluation(use_llm: bool = True, save: bool = True):
+def run_sales_evaluation(
+    use_llm: bool = True,
+    save: bool = True,
+    *,
+    category: str | None = None,
+    limit: int | None = None,
+):
     """
-    Run all SalesEvalScenarios, compute 8-dimension scores, optionally persist.
+    Run SalesEvalScenarios, compute 8-dimension scores, optionally persist.
     Returns summary dict with run_id, metrics, results.
+
+    category: optional SalesEvalScenario.category filter (e.g. intent, arabic).
+    limit: max scenarios after ordering (for quick CI smoke).
     """
     from evaluation.models import SalesEvalScenario, SalesEvalRun, SalesEvalResult
 
-    scenarios = list(SalesEvalScenario.objects.all())
+    qs = SalesEvalScenario.objects.all().order_by("category", "name")
+    if category:
+        qs = qs.filter(category=category)
+    scenarios = list(qs[:limit] if limit else qs)
     if not scenarios:
         return {"error": "No scenarios loaded. Run: python manage.py load_sales_eval_scenarios"}
 

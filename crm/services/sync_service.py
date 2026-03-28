@@ -2,9 +2,13 @@
 CRM sync service: create/update CRMRecord, append notes, update lead stage, assign owner/queue, link support.
 Conversation outcomes sync into CRM. Audit trail via CRMActivityLog and ActionLog.
 """
+import logging
 from typing import Optional
 
 from django.db import transaction
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 from crm.models import CRMRecord, CRMActivityLog
 from audit.models import ActionLog
@@ -348,5 +352,19 @@ def sync_conversation_outcome(
         log_crm_sync(customer_id=customer_id, action="sync_conversation_outcome", actions=actions)
     except ImportError:
         pass
+
+    if getattr(settings, "EXTERNAL_CRM_PUSH_ENABLED", False):
+        try:
+            from integrations.crm_bridge import push_conversation_sync_to_external_crm
+
+            push_conversation_sync_to_external_crm(
+                rec.id,
+                note=note,
+                lead_stage=lead_stage,
+                owner=owner,
+                tags=tags,
+            )
+        except Exception as exc:
+            logger.warning("External CRM push failed (record %s): %s", rec.id, exc)
 
     return rec

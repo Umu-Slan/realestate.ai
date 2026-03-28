@@ -4,6 +4,8 @@ Uses all agent outputs: intent, memory, lead score, buyer stage, retrieval,
 recommendations, sales strategy, objection handling, conversation plan.
 Arabic-first, natural, varied, context-aware.
 """
+from django.conf import settings
+
 from orchestration.agents.base import Agent, AgentContext, AgentResult
 from orchestration.agents.schemas import ResponseComposerAgentOutput
 from engines.response_composer_engine import (
@@ -59,6 +61,7 @@ class ResponseComposerAgent:
                     routing=routing_ctx,
                     conversation_history=history,
                     use_llm=use_llm,
+                    channel=context.channel or "web",
                 )
                 composed_from = ["sales_strategy", "intent", "support_engine"]
 
@@ -79,6 +82,7 @@ class ResponseComposerAgent:
                     has_verified_pricing=retrieval.get("has_verified_pricing", False),
                     use_llm=use_llm,
                     lang=lang,
+                    channel=context.channel or "web",
                 )
                 composed_from = [
                     "sales_strategy", "retrieval", "lead_qualification",
@@ -102,7 +106,10 @@ class ResponseComposerAgent:
                     {"role": "system", "content": f"You are a real estate assistant. Context: {retrieval_ctx[:500]}. Be helpful.{safe}"},
                     {"role": "user", "content": context.message_text},
                 ]
-                reply_text = get_llm_client().chat_completion(messages)
+                reply_text = get_llm_client().chat_completion(
+                    messages,
+                    timeout=int(getattr(settings, "LLM_TIMEOUT_SECONDS", 30) or 30),
+                )
                 cta = "nurture"
                 reasoning = "fallback | generic_llm"
                 composed_from = ["retrieval", "generic_llm"]

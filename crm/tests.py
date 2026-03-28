@@ -176,3 +176,59 @@ def test_duplicate_protection():
     rec2 = get_or_create_crm_record_for_customer(customer.id, actor="test")
     assert rec1.id == rec2.id
     assert CRMRecord.objects.filter(linked_customer_id=customer.id).count() == 1
+
+
+@pytest.mark.django_db
+def test_external_sync_upsert_new_lead():
+    from companies.services import ensure_default_company
+    from crm.services.external_sync import upsert_crm_lead_from_payload
+
+    ensure_default_company()
+    out = upsert_crm_lead_from_payload(
+        {
+            "crm_id": "EXT_WH_1",
+            "name": "Webhook Lead",
+            "phone": "+201012345678",
+            "email": "wh@example.com",
+            "lead_stage": "new",
+        },
+        actor="test",
+    )
+    assert out["status"] == "imported"
+    assert CRMRecord.objects.filter(crm_id="EXT_WH_1").exists()
+
+
+@pytest.mark.django_db
+def test_external_sync_updates_existing():
+    from companies.services import ensure_default_company
+    from crm.services.external_sync import upsert_crm_lead_from_payload
+
+    ensure_default_company()
+    upsert_crm_lead_from_payload(
+        {"crm_id": "EXT_UP", "name": "A", "phone": "+201022222222", "email": "a@a.com"},
+        actor="test",
+    )
+    out2 = upsert_crm_lead_from_payload(
+        {"crm_id": "EXT_UP", "notes": "Called today", "lead_stage": "qualified"},
+        actor="test",
+    )
+    assert out2["status"] == "updated"
+    rec = CRMRecord.objects.get(crm_id="EXT_UP")
+    assert "Called today" in rec.notes
+    assert rec.lead_stage == "qualified"
+
+
+@pytest.mark.django_db
+def test_crm_events_inbound_api_auth(settings):
+    from rest_framework.test import APIClient
+
+    settings.CRM_INBOUND_WEBHOOK_SECRET = "test-secret-xyz"
+    settings.DEBUG = False
+    client = APIClient()
+    url = "/api/crm/events/"
+    body = {"crm_id": "API_EVT", "name": "X", "phone": "+201033333333", "email": "x@x.com"}
+    r = client.post(url, body, format="json")
+    assert r.status_code == 401
+    r2 = client.post(url, body, format="json", HTTP_AUTHORIZATION="Bearer test-secret-xyz")
+    assert r2.status_code == 200
+    assert r2.data.get("status") == "imported"

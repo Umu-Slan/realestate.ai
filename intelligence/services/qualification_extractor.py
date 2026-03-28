@@ -33,6 +33,21 @@ def _parse_amount(s: str) -> Optional[Decimal]:
         return None
 
 
+def _combined_user_text_for_qualification(message_text: str, history: list | None) -> str:
+    """Merge recent user turns so budget/location from prior messages count toward missing_fields."""
+    chunks: list[str] = []
+    if history:
+        for m in history[-8:]:
+            if (m.get("role") or "").lower() == "user":
+                c = (m.get("content") or "").strip()
+                if c:
+                    chunks.append(c)
+    cur = (message_text or "").strip()
+    if cur and (not chunks or chunks[-1] != cur):
+        chunks.append(cur)
+    return "\n".join(chunks) if chunks else (message_text or "").strip()
+
+
 def _deterministic_extract(text: str) -> QualificationExtraction:
     """Fallback extraction using regex."""
     t = (text or "").strip()
@@ -113,7 +128,8 @@ def extract_qualification(
         if result:
             return result
 
-    return _deterministic_extract(text)
+    combined = _combined_user_text_for_qualification(text, conversation_history)
+    return _deterministic_extract(combined or text)
 
 
 def _llm_extract(text: str, history: list[dict]) -> QualificationExtraction | None:

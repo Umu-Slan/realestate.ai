@@ -159,9 +159,11 @@ def run_multi_agent_pipeline(
     run.draft_response = composer.get("reply_text", "") or composer.get("draft_response", "")
 
     # Safe response policy from retrieval
+    from orchestration.policy_engine import intent_primary_is_strict_price_inquiry
+
     intent_primary = (run.intent_result.get("primary") or "").lower()
     msg_lower = (intake.normalized_content or "").lower()
-    is_price_inquiry = "price" in intent_primary
+    is_price_inquiry = intent_primary_is_strict_price_inquiry(intent_primary)
     is_availability_inquiry = (
         "availability" in intent_primary or
         any(kw in msg_lower for kw in ("متوفر", "متبقى", "وحدة متبقية", "availability", "units left"))

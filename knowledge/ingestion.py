@@ -1,9 +1,9 @@
 """
 Ingestion pipeline: parse -> chunk -> embed -> store.
 """
-from datetime import datetime
 from pathlib import Path
 
+from django.db import transaction
 from django.utils import timezone
 
 from knowledge.models import RawDocument, IngestedDocument, DocumentChunk, DocumentVersion
@@ -12,6 +12,7 @@ from knowledge.parsers import (
     parse_csv,
     parse_excel,
     parse_text,
+    parse_image,
     compute_file_hash,
     ParseResult,
 )
@@ -121,6 +122,8 @@ def _parse_by_extension(path: str, doc_type: DocumentType) -> ParseResult:
         return parse_excel(path)
     if ext in (".txt", ".md"):
         return parse_text(path)
+    if ext in (".jpg", ".jpeg", ".png", ".webp", ".gif", ".tif", ".tiff", ".bmp"):
+        return parse_image(path, doc_type)
     raise ValueError(f"Unsupported file type: {ext}")
 
 
@@ -179,3 +182,69 @@ def ingest_from_content(
     doc.status = "embedded"
     doc.save(update_fields=["status", "updated_at"])
     return doc
+
+
+def reparse_ingested_document(ingested: IngestedDocument) -> IngestedDocument:
+    """
+    Re-run parse → chunk → embed from the stored raw file (RawDocument.file_path).
+    Use after enabling Tesseract, changing TESSERACT_LANG, or upgrading parsers.
+    Does not replace reindex_knowledge (that only re-embeds existing chunk text).
+    """
+    if not ingested.raw_document_id:
+        raise ValueError(
+            "This document has no linked raw file record; upload the file again to ingest."
+        )
+    path = Path(ingested.raw_document.file_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"Raw file missing on disk: {path}")
+
+    raw_dt = ingested.document_type
+    dt = raw_dt if isinstance(raw_dt, DocumentType) else DocumentType(raw_dt)
+
+    now = timezone.now()
+    try:
+        with transaction.atomic():
+            result = _parse_by_extension(str(path), dt)
+            ingested.chunks.all().delete()
+            new_ver = (ingested.version or 1) + 1
+            ingested.parsed_content = result.content
+            ingested.parsed_at = now
+            ingested.language = result.language
+            ingested.metadata = {**(ingested.metadata or {}), **result.metadata}
+            ingested.error_message = ""
+            ingested.version = new_ver
+            ingested.status = "parsed"
+            ingested.save()
+
+            DocumentVersion.objects.create(
+                document=ingested,
+                version_number=new_ver,
+                parsed_content=result.content,
+                snapshot_metadata=ingested.metadata,
+            )
+            chunks_data = chunk_document(
+                result.sections,
+                dt,
+                verification_status=ingested.verification_status,
+                access_level=ingested.access_level,
+            )
+            for i, c in enumerate(chunks_data):
+                DocumentChunk.objects.create(
+                    document=ingested,
+                    chunk_index=i,
+                    chunk_type=c["chunk_type"],
+                    section_title=c.get("section_title", ""),
+                    content=c["content"],
+                    language=ingested.language,
+                    metadata=c.get("metadata", {}),
+                )
+            to_embed = list(ingested.chunks.all())
+            embed_chunks(to_embed)
+            ingested.status = "embedded"
+            ingested.save(update_fields=["status", "updated_at"])
+    except Exception as e:
+        ingested.status = "failed"
+        ingested.error_message = str(e)[:2000]
+        ingested.save(update_fields=["status", "error_message", "updated_at"])
+        raise
+    return ingested
